@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:safetynet/screens/auth/login_screen.dart';
+import 'package:safetynet/screens/auth/login_or_signup_screen.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 import 'package:safetynet/widget/onboaring_page.dart';
 import 'package:safetynet/widget/page_indicator_widget.dart';
