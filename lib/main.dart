@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Safety Net',
       theme: theme,
-      home: const SplashScreen(),
+      home: const SafetyNetSplashScreen(),
       // home: const CategoriesScreen(),
     );
   }
