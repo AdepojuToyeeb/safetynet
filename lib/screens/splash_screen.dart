@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import "package:safetynet/screens/onboarding/onboarding_screen.dart";
-import 'package:flutter_svg/flutter_svg.dart';
 
 class SafetyNetSplashScreen extends StatefulWidget {
   const SafetyNetSplashScreen({super.key});
@@ -12,7 +11,6 @@ class SafetyNetSplashScreen extends StatefulWidget {
 class SafetyNetSplashScreenState extends State<SafetyNetSplashScreen>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _logoAnimation;
   late Animation<double> _textAnimation;
 
   void _navigateToOnboarding() {
@@ -32,12 +30,6 @@ class SafetyNetSplashScreenState extends State<SafetyNetSplashScreen>
       vsync: this,
     );
 
-    _logoAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
-      ),
-    );
 
     _textAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(

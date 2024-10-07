@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:safetynet/widget/custom_next_button.dart';
 import 'package:safetynet/widget/page_indicator_widget.dart';
 
 class OnboardingPage extends StatelessWidget {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetynet/screens/verification/verify_phone.dart';
 
 class CreateAccountScreen extends StatelessWidget {
   const CreateAccountScreen({super.key});
@@ -17,38 +18,38 @@ class CreateAccountScreen extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
-            const CircleAvatar(
-              backgroundColor: Colors.blue,
-              radius: 25,
-              child: Text(
-                'S',
-                style: TextStyle(fontSize: 24, color: Colors.white),
-              ),
-            ),
+            const Spacer(),
             const SizedBox(height: 20),
             const Text(
               'Safetynet.',
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
             const Text(
               'Help in a flash!',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey,
+                color: Colors.white70,
               ),
             ),
             const Spacer(),
-            OutlinedButton.icon(
-              onPressed: () {},
+            ElevatedButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const PhoneNumberScreen()),
+                );
+              },
               icon: const Icon(
                 Icons.phone,
                 color: Colors.white,
+                size: 16,
               ),
               style: ElevatedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 50),
@@ -57,38 +58,82 @@ class CreateAccountScreen extends StatelessWidget {
                 ),
                 backgroundColor: const Color.fromRGBO(25, 118, 210, 1),
               ),
-              label: const Text('Use Phone Number'),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.fmd_good, color: Colors.black),
-              label: const Text('Sign in with Google'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
+              label: Text(
+                'Use Phone Number',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: Colors.white,
+                    ),
               ),
             ),
             const SizedBox(height: 16),
-            OutlinedButton.icon(
+            ElevatedButton.icon(
               onPressed: () {},
-              icon: const Icon(Icons.apple, color: Colors.white),
-              label: const Text('Sign in with Apple'),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
+              icon: const Icon(Icons.g_translate_rounded, color: Colors.black),
+              label: Text(
+                'Sign in with Google',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: Colors.black,
+                    ),
               ),
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  backgroundColor: Colors.white),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () {},
+              icon: const Icon(
+                Icons.apple,
+                color: Colors.white,
+              ),
+              label: Text(
+                'Sign in with Apple',
+                style: Theme.of(context).textTheme.titleMedium!.copyWith(
+                      color: Colors.white,
+                    ),
+              ),
+              style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                  backgroundColor: Colors.black),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'By signing up, you agree to our Terms and Conditions. See how we use your data in our Privacy Policy.',
-              style: TextStyle(
-                color: Colors.grey,
-                fontSize: 12,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 0),
+              child: RichText(
+                textAlign: TextAlign.center,
+                text: const TextSpan(
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                  children: [
+                    TextSpan(text: 'By signing up, you agree to our '),
+                    TextSpan(
+                      text: 'Terms and Conditions',
+                      style: TextStyle(
+                        color: Colors.blueAccent, // Link color
+                        decoration:
+                            TextDecoration.underline, // Underline the text
+                      ),
+                    ),
+                    TextSpan(text: '. See how we use your data in our '),
+                    TextSpan(
+                      text: 'Privacy Policy',
+                      style: TextStyle(
+                        color: Colors.blueAccent, // Link color
+                        decoration:
+                            TextDecoration.underline, // Underline the text
+                      ),
+                    ),
+                    TextSpan(text: '.'),
+                  ],
+                ),
               ),
             ),
             const SizedBox(height: 24),
