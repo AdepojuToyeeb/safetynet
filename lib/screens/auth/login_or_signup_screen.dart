@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:safetynet/screens/auth/create_account.dart';
+import 'package:safetynet/screens/auth/login_screen.dart';
 
 class SafetynetLoginScreen extends StatelessWidget {
   const SafetynetLoginScreen({super.key});
@@ -34,7 +35,13 @@ class SafetynetLoginScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       ElevatedButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginScreen()),
+                          );
+                        },
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(double.infinity, 50),
                           shape: RoundedRectangleBorder(
@@ -122,8 +129,7 @@ class SafetynetLoginScreen extends StatelessWidget {
                         fontSize: 14,
                       ),
                       children: [
-                        TextSpan(
-                            text: 'By signing up, you agree to our '),
+                        TextSpan(text: 'By signing up, you agree to our '),
                         TextSpan(
                           text: 'Terms and Conditions',
                           style: TextStyle(
@@ -132,8 +138,7 @@ class SafetynetLoginScreen extends StatelessWidget {
                                 TextDecoration.underline, // Underline the text
                           ),
                         ),
-                        TextSpan(
-                            text: '. See how we use your data in our '),
+                        TextSpan(text: '. See how we use your data in our '),
                         TextSpan(
                           text: 'Privacy Policy',
                           style: TextStyle(

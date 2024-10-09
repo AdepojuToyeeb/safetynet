@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:safetynet/screens/emergency/success_additionn.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 
 class EmergencyContactsScreen extends StatefulWidget {
@@ -8,11 +9,10 @@ class EmergencyContactsScreen extends StatefulWidget {
 
   @override
   EmergencyContactsScreenState createState() => EmergencyContactsScreenState();
-
 }
 
-class EmergencyContactsScreenState  extends State<EmergencyContactsScreen> {
-  late List<Contact> _contacts;
+class EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
+  late List<Contact> _contacts = [];
   final List<Contact> _selectedContacts = [];
   List<Contact> _filteredContacts = [];
   final TextEditingController _searchController = TextEditingController();
@@ -31,6 +31,19 @@ class EmergencyContactsScreenState  extends State<EmergencyContactsScreen> {
     super.dispose();
   }
 
+  void _showDialog() {
+    showModalBottomSheet(
+      useSafeArea: true,
+      isScrollControlled: true,
+      isDismissible: false,
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => const SuccesfulEmergency(),
+    );
+  }
+
   Future<void> _fetchContacts() async {
     PermissionStatus permissionStatus = await Permission.contacts.request();
     if (permissionStatus.isGranted) {
@@ -45,7 +58,7 @@ class EmergencyContactsScreenState  extends State<EmergencyContactsScreen> {
           _isLoading = false;
         });
       } catch (e) {
-         if (mounted) {
+        if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Failed to load contacts')),
           );
@@ -55,7 +68,7 @@ class EmergencyContactsScreenState  extends State<EmergencyContactsScreen> {
         }
       }
     } else {
-     if (mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Contacts permission denied')),
         );
@@ -103,87 +116,86 @@ class EmergencyContactsScreenState  extends State<EmergencyContactsScreen> {
         ),
         backgroundColor: Colors.white,
       ),
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : Column(
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Select your Emergency Contacts',
-                        style: TextStyle(color: Colors.black, fontSize: 32),
-                      ),
-                      const SizedBox(height: 20),
-                      const Text(
-                        'Select people to be contacted immediately in case of any emergencies.',
-                        style: TextStyle(color: Colors.black),
-                      ),
-                      const SizedBox(
-                        height: 20,
-                      ),
-                      Wrap(
-                        spacing: 8,
-                        children: [
-                          ..._selectedContacts.take(2).map((contact) => Chip(
-                                label: ConstrainedBox(
-                                  constraints: const BoxConstraints(
-                                      maxWidth: 60), // Set max width
-                                  child: Text(
-                                    contact.displayName,
-                                    overflow: TextOverflow
-                                        .ellipsis, // Add ellipsis if text is too long
-                                  ),
-                                ),
-                                onDeleted: () => _removeContact(contact),
-                              )),
-                          if (_selectedContacts.length > 2)
-                            Chip(
-                              label: Text(
-                                '+${_selectedContacts.length - 2} other contacts',
-                                style: const TextStyle(color: Colors.black),
-                              ),
-                              backgroundColor:
-                                  Colors.grey[300], // Customize as needed
+                const Text(
+                  'Select your Emergency Contacts',
+                  style: TextStyle(color: Colors.black, fontSize: 32),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Select people to be contacted immediately in case of any emergencies.',
+                  style: TextStyle(color: Colors.black),
+                ),
+                const SizedBox(
+                  height: 20,
+                ),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ..._selectedContacts.take(2).map((contact) => Chip(
+                          label: ConstrainedBox(
+                            constraints: const BoxConstraints(
+                                maxWidth: 60), // Set max width
+                            child: Text(
+                              contact.displayName,
+                              overflow: TextOverflow
+                                  .ellipsis, // Add ellipsis if text is too long
                             ),
-                        ],
-                      ),
-
-                      const SizedBox(height: 16),
-                      // Search bar
-                      TextField(
-                        controller: _searchController,
-                        decoration: InputDecoration(
-                          hintText: 'Search contacts',
-                          prefixIcon: const Icon(Icons.search),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: Colors
-                                    .black), // Black border for default state
                           ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color:
-                                    Colors.black), // Black border when enabled
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                                color: Colors.black,
-                                width: 1), // Thicker black border when focused
-                          ),
+                          onDeleted: () => _removeContact(contact),
+                        )),
+                    if (_selectedContacts.length > 2)
+                      Chip(
+                        label: Text(
+                          '+${_selectedContacts.length - 2} other contacts',
+                          style: const TextStyle(color: Colors.black),
                         ),
+                        backgroundColor:
+                            Colors.grey[300], // Customize as needed
                       ),
-                    ],
+                  ],
+                ),
+
+                const SizedBox(height: 16),
+                // Search bar
+                TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search contacts',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color:
+                              Colors.black), // Black border for default state
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color: Colors.black), // Black border when enabled
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: const BorderSide(
+                          color: Colors.black,
+                          width: 1), // Thicker black border when focused
+                    ),
                   ),
                 ),
-                Expanded(
+              ],
+            ),
+          ),
+          _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(),
+                )
+              : Expanded(
                   child: ListView.builder(
                     itemCount: _filteredContacts.length,
                     itemBuilder: (context, index) {
@@ -246,17 +258,16 @@ class EmergencyContactsScreenState  extends State<EmergencyContactsScreen> {
                     },
                   ),
                 ),
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-                  child: CustomNextButton(
-                    onPressed: () {},
-                    text: "Proceed",
-                    enabled: _contacts.isNotEmpty,
-                  ),
-                ),
-              ],
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: CustomNextButton(
+              onPressed: _showDialog,
+              text: "Proceed",
+              enabled: _contacts.isNotEmpty,
             ),
+          ),
+        ],
+      ),
     );
   }
 }
