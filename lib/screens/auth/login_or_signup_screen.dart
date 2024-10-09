@@ -12,7 +12,7 @@ class SafetynetLoginScreen extends StatelessWidget {
         children: [
           // Background Image
           Image.asset(
-            'assets/images/backgroud.png', // Replace with your actual image path
+            'assets/images/background.png', // Replace with your actual image path
             fit: BoxFit.cover,
           ),
           // Overlay
@@ -27,21 +27,6 @@ class SafetynetLoginScreen extends StatelessWidget {
               children: [
                 const Spacer(),
                 const SizedBox(height: 16),
-                const Text(
-                  'Safetynet.',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-                const Text(
-                  'Help in a flash!',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white70,
-                  ),
-                ),
                 const Spacer(),
                 // Login Button
                 Padding(

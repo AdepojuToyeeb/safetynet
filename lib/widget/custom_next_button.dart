@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 class CustomNextButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
+  final bool enabled;
 
   const CustomNextButton({
     super.key,
     required this.onPressed,
     required this.text,
+    required this.enabled,
   });
 
   @override
@@ -27,11 +29,13 @@ class CustomNextButton extends StatelessWidget {
         ],
       ),
       child: ElevatedButton(
-        onPressed: onPressed,
+        onPressed: enabled ? onPressed : null,
         style: ElevatedButton.styleFrom(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
           ),
+          disabledBackgroundColor: Colors.grey, // Color when disabled
+          disabledForegroundColor: Colors.white60,  
           backgroundColor: const Color.fromRGBO(25, 118, 210, 1),
           elevation: 0,
         ),

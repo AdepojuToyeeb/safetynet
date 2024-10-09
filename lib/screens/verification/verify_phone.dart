@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
+import 'package:safetynet/screens/verification/confirm_phone_number.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 
 class PhoneNumberScreen extends StatefulWidget {
@@ -90,8 +91,21 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                     print('On Saved: $number');
                   },
                 ),
-                const SizedBox(height: 60,),
-                CustomNextButton(onPressed: () {}, text: "Proceed")
+                const SizedBox(
+                  height: 60,
+                ),
+                CustomNextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ConfirmPhoneNumber(),
+                      ),
+                    );
+                  },
+                  text: "Proceed",
+                  enabled: true,
+                )
               ],
             ),
           ],

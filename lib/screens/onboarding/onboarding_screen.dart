@@ -123,6 +123,7 @@ class _OnboardingScreensState extends State<OnboardingScreens> {
                       );
                     },
               text: _currentPage < 2 ? "Next" : "Get Started",
+              enabled: true,
             ),
           )
         ],
