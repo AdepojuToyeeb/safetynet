@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetynet/screens/auth/sign_up.dart';
 import 'package:safetynet/screens/verification/verify_phone.dart';
 
 class CreateAccountScreen extends StatelessWidget {
@@ -79,6 +80,33 @@ class CreateAccountScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => SignupWidget()),
+                          );
+                        },
+                        icon: const Icon(
+                          Icons.mail_outlined,
+                          color: Colors.white,
+                        ),
+                        label: Text(
+                          'Sign up with Email',
+                          style:
+                              Theme.of(context).textTheme.titleMedium!.copyWith(
+                                    color: Colors.white,
+                                  ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                            backgroundColor: Colors.black),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
                         onPressed: () {},
                         icon: const Icon(Icons.g_translate_rounded,
                             color: Colors.black),
@@ -97,26 +125,6 @@ class CreateAccountScreen extends StatelessWidget {
                             backgroundColor: Colors.white),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.apple,
-                          color: Colors.white,
-                        ),
-                        label: Text(
-                          'Sign in with Apple',
-                          style:
-                              Theme.of(context).textTheme.titleMedium!.copyWith(
-                                    color: Colors.white,
-                                  ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                            minimumSize: const Size(double.infinity, 50),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                            backgroundColor: Colors.black),
-                      ),
                     ],
                   ),
                 ),

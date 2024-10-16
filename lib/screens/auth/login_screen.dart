@@ -140,7 +140,9 @@ class SignInButtonWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authNotifier = ref.read(authProvider.notifier);
     return CustomNextButton(
-        onPressed: authNotifier.signIn, text: "Sign In", enabled: true);
+        onPressed: () => authNotifier.signIn(context),
+        text: "Sign In",
+        enabled: true);
   }
 }
 

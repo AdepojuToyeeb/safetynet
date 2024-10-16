@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:safetynet/screens/main/main_app.dart';
 
 class AuthNotifier extends StateNotifier<AuthState> {
   AuthNotifier() : super(AuthState());
@@ -11,10 +13,12 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(password: password);
   }
 
-  Future<void> signIn() async {
+  Future<void> signIn(BuildContext context) async {
     // Implement your sign in logic here
-    print(
-        'Signing in with email: ${state.email} and password: ${state.password}');
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+    );
     // After successful sign in, you might want to navigate to another screen
   }
 }
@@ -33,7 +37,6 @@ class AuthState {
     );
   }
 }
-
 
 final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
   return AuthNotifier();
