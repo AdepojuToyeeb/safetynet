@@ -3,6 +3,7 @@
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
     show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import './env/env.dart';
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
@@ -24,10 +25,6 @@ class DefaultFirebaseOptions {
         return android;
       case TargetPlatform.iOS:
         return ios;
-      case TargetPlatform.macOS:
-        return macos;
-      case TargetPlatform.windows:
-        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -40,9 +37,9 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBSdqmB8K0pqkDs7Ns-xMVrUf8xpsdeVjY',
-    appId: '1:758501778551:web:b3dfbb0f9e2de1bde05272',
+  static FirebaseOptions web = FirebaseOptions(
+    apiKey: Env.firebaseApiKey,
+    appId: Env.webAppId,
     messagingSenderId: '758501778551',
     projectId: 'safetynet-78a92',
     authDomain: 'safetynet-78a92.firebaseapp.com',
@@ -50,39 +47,20 @@ class DefaultFirebaseOptions {
     measurementId: 'G-FV04H49999',
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDokkE2AARq8Hyvbu5Ivu-jkmWuFRq-7to',
-    appId: '1:758501778551:android:a3960f01244f2a55e05272',
+  static FirebaseOptions android = FirebaseOptions(
+    apiKey: Env.firebaseApiKey,
+    appId: Env.androidAppId,
     messagingSenderId: '758501778551',
     projectId: 'safetynet-78a92',
     storageBucket: 'safetynet-78a92.appspot.com',
   );
 
-  static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyBTdjrIEG1zjTUcWm6RwN8rdy3zbwccBlU',
-    appId: '1:758501778551:ios:dffddf71dbe58ee1e05272',
+  static FirebaseOptions ios = FirebaseOptions(
+    apiKey: Env.firebaseApiKey,
+    appId: Env.iosAppId,
     messagingSenderId: '758501778551',
     projectId: 'safetynet-78a92',
     storageBucket: 'safetynet-78a92.appspot.com',
     iosBundleId: 'com.example.safetynet',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBTdjrIEG1zjTUcWm6RwN8rdy3zbwccBlU',
-    appId: '1:758501778551:ios:dffddf71dbe58ee1e05272',
-    messagingSenderId: '758501778551',
-    projectId: 'safetynet-78a92',
-    storageBucket: 'safetynet-78a92.appspot.com',
-    iosBundleId: 'com.example.safetynet',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBSdqmB8K0pqkDs7Ns-xMVrUf8xpsdeVjY',
-    appId: '1:758501778551:web:afc5c4a5c0c67b4ae05272',
-    messagingSenderId: '758501778551',
-    projectId: 'safetynet-78a92',
-    authDomain: 'safetynet-78a92.firebaseapp.com',
-    storageBucket: 'safetynet-78a92.appspot.com',
-    measurementId: 'G-CLP4MW9N2Q',
   );
 }

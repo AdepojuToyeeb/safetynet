@@ -1,214 +1,119 @@
+// auth_service.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:safetynet/providers/auth_provider.dart';
-import 'package:safetynet/widget/custom_next_button.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+class AuthService {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-class LoginScreen extends ConsumerWidget {
-  const LoginScreen({super.key});
+  // Email & Password Sign In
+  Future<UserCredential> signInWithEmailAndPassword(
+      String email, String password) async {
+    try {
+      return await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } catch (e) {
+      throw _handleAuthException(e);
+    }
+  }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return const Scaffold(
-      resizeToAvoidBottomInset: false,
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          physics: NeverScrollableScrollPhysics(), // Disable scrolling
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: 48),
-                LogoWidget(assetPath: 'assets/images/logo.png'),
-                SizedBox(height: 24),
-                WelcomeTextWidget(),
-                SizedBox(height: 48),
-                EmailInputWidget(),
-                SizedBox(height: 30),
-                PasswordInputWidget(),
-                SizedBox(height: 64),
-                SignInButtonWidget(),
-                SizedBox(height: 30),
-                OrDividerWidget(),
-                SizedBox(height: 30),
-                GoogleSignInButtonWidget(),
-                SizedBox(height: 16),
-                AppleSignInButtonWidget(),
-                SizedBox(height: 48), // Add extra space at the bottom
-              ],
-            ),
-          ),
-        ),
-      ),
+
+
+  // Sign Out
+  Future<void> signOut() async {
+    await Future.wait([
+      _auth.signOut(),
+    ]);
+  }
+
+  // Error Handler
+  String _handleAuthException(dynamic e) {
+    if (e is FirebaseAuthException) {
+      switch (e.code) {
+        case 'user-not-found':
+          return 'No user found with this email.';
+        case 'wrong-password':
+          return 'Wrong password provided.';
+        case 'invalid-email':
+          return 'The email address is badly formatted.';
+        case 'user-disabled':
+          return 'This user account has been disabled.';
+        case 'too-many-requests':
+          return 'Too many unsuccessful login attempts. Please try again later.';
+        default:
+          return 'An error occurred. Please try again.';
+      }
+    }
+    return e.toString();
+  }
+}
+
+// auth_provider.dart
+
+
+final authServiceProvider = Provider((ref) => AuthService());
+
+final authStateProvider = StreamProvider<User?>((ref) {
+  return FirebaseAuth.instance.authStateChanges();
+});
+
+class AuthNotifier extends StateNotifier<AuthState> {
+  final AuthService _authService;
+  
+  AuthNotifier(this._authService) : super(AuthState());
+  
+  String? _email;
+  String? _password;
+  
+  void setEmail(String email) => _email = email;
+  void setPassword(String password) => _password = password;
+
+  Future<void> signIn(BuildContext context) async {
+    if (_email == null || _password == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
+    try {
+      state = state.copyWith(isLoading: true, error: null);
+      await _authService.signInWithEmailAndPassword(_email!, _password!);
+      state = state.copyWith(isLoading: false);
+      // Navigate to home screen or handle successful login
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+}
+
+class AuthState {
+  final bool isLoading;
+  final String? error;
+
+  AuthState({
+    this.isLoading = false,
+    this.error,
+  });
+
+  AuthState copyWith({
+    bool? isLoading,
+    String? error,
+  }) {
+    return AuthState(
+      isLoading: isLoading ?? this.isLoading,
+      error: error,
     );
   }
 }
 
-class LogoWidget extends StatelessWidget {
-  final String assetPath;
-
-  const LogoWidget({super.key, required this.assetPath});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Image.asset(
-          assetPath,
-          fit: BoxFit.contain,
-          width: 100,
-          height: 100,
-          errorBuilder: (context, error, stackTrace) {
-            return const Icon(Icons.error, color: Colors.red);
-          },
-        ),
-        const Text(
-          "Safetynet.",
-          style: TextStyle(
-              color: Color.fromRGBO(25, 118, 210, 1),
-              fontWeight: FontWeight.w600,
-              fontSize: 24),
-        )
-      ],
-    );
-  }
-}
-
-class WelcomeTextWidget extends StatelessWidget {
-  const WelcomeTextWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Text(
-          'Welcome Back',
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
-        ),
-        SizedBox(height: 4),
-        Text(
-          'To get started, sign in to your account.',
-          style: TextStyle(
-              fontSize: 16, color: Colors.black, fontWeight: FontWeight.w400),
-        ),
-      ],
-    );
-  }
-}
-
-class EmailInputWidget extends ConsumerWidget {
-  const EmailInputWidget({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authNotifier = ref.read(authProvider.notifier);
-    return TextFormField(
-      decoration: const InputDecoration(
-        labelText: 'Email Address',
-        border: OutlineInputBorder(),
-      ),
-      keyboardType: TextInputType.emailAddress,
-      onChanged: authNotifier.setEmail,
-    );
-  }
-}
-
-class PasswordInputWidget extends ConsumerWidget {
-  const PasswordInputWidget({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authNotifier = ref.read(authProvider.notifier);
-    return TextFormField(
-      decoration: const InputDecoration(
-        labelText: 'Password',
-        border: OutlineInputBorder(),
-      ),
-      obscureText: true,
-      onChanged: authNotifier.setPassword,
-    );
-  }
-}
-
-class SignInButtonWidget extends ConsumerWidget {
-  const SignInButtonWidget({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authNotifier = ref.read(authProvider.notifier);
-    return CustomNextButton(
-        onPressed: () => authNotifier.signIn(context),
-        text: "Sign In",
-        enabled: true);
-  }
-}
-
-class OrDividerWidget extends StatelessWidget {
-  const OrDividerWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Row(
-      children: [
-        Expanded(child: Divider()),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 8.0),
-          child: Text('or'),
-        ),
-        Expanded(child: Divider()),
-      ],
-    );
-  }
-}
-
-class GoogleSignInButtonWidget extends StatelessWidget {
-  const GoogleSignInButtonWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromRGBO(248, 248, 248, 1),
-        shadowColor: Colors.transparent,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
-      icon: const Icon(Icons.g_translate, color: Colors.black),
-      label: const Text(
-        'Sign in with Google',
-        style: TextStyle(color: Colors.black),
-      ),
-      onPressed: () {
-        // Implement Apple sign in
-      },
-    );
-  }
-}
-
-class AppleSignInButtonWidget extends StatelessWidget {
-  const AppleSignInButtonWidget({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromRGBO(248, 248, 248, 1),
-        shadowColor: Colors.transparent,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-      ),
-      icon: const Icon(
-        Icons.apple,
-        color: Colors.black,
-      ),
-      label: const Text(
-        'Sign in with Apple',
-        style: TextStyle(color: Colors.black),
-      ),
-      onPressed: () {
-        // Implement Apple sign in
-      },
-    );
-  }
-}
+final authProvider =
+    StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+  final authService = ref.watch(authServiceProvider);
+  return AuthNotifier(authService);
+});

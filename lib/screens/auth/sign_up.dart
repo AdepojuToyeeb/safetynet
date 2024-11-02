@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:safetynet/screens/auth/login_screen.dart';
+import 'package:safetynet/screens/auth/login_or_signup_screen.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 
 // Define a provider for FirebaseAuth
@@ -75,7 +75,7 @@ class SignupWidget extends ConsumerWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const LoginScreen(),
+              builder: (context) => const SafetynetLoginScreen(),
             ), // Replace with your screen widget
           );
         });
