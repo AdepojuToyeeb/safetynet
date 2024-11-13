@@ -2,130 +2,200 @@ import 'package:flutter/material.dart';
 import 'package:safetynet/screens/auth/login_or_signup_screen.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 import 'package:safetynet/widget/onboaring_page.dart';
+import 'package:safetynet/widget/page_indicator_widget.dart';
 
-class OnboardingScreens extends StatefulWidget {
-  const OnboardingScreens({super.key});
+// Models
+class OnboardingContent {
+  final String title;
+  final String description;
+  final String imagePath;
+  final String buttonText;
 
-  @override
-  State<OnboardingScreens> createState() => _OnboardingScreensState();
+  const OnboardingContent({
+    required this.title,
+    required this.description,
+    required this.imagePath,
+    required this.buttonText,
+  });
 }
 
-class _OnboardingScreensState extends State<OnboardingScreens> {
-  final PageController _pageController = PageController();
+// Constants
+class OnboardingData {
+  static const List<OnboardingContent> pages = [
+    OnboardingContent(
+      title: 'Welcome to SafetyNet',
+      description:
+          'Stay safe with quick emergency alerts and real-time collaboration to get help just when you need it.',
+      imagePath: 'assets/images/onboarding1.png',
+      buttonText: 'Next',
+    ),
+    OnboardingContent(
+      title: 'Activate Alerts Quickly',
+      description:
+          'Just a few taps to activate alerts. Your emergency contacts get notified instantly.',
+      imagePath: 'assets/images/onboarding2.png',
+      buttonText: 'Next',
+    ),
+    OnboardingContent(
+      title: 'Emergency Contacts',
+      description:
+          'Manage and update your emergency contacts for quick access in an emergency.',
+      imagePath: 'assets/images/onboarding3.png',
+      buttonText: 'Get Started',
+    ),
+  ];
+}
+
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with SingleTickerProviderStateMixin {
+  late final PageController _pageController;
+  late final AnimationController _animationController;
+  late final Animation<double> _fadeAnimation;
   int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
-    _pageController.addListener(() {
-      setState(() {
-        _currentPage = _pageController.page!.round();
-      });
-    });
+    _pageController = PageController()..addListener(_onPageChanged);
+
+    _animationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
+    );
+
+    _animationController.forward();
   }
 
-  void _nextPage() {
-    if (_pageController.page! < 2) {
-      _pageController.nextPage(
-        duration: const Duration(milliseconds: 300),
+  void _onPageChanged() {
+    if (_pageController.page != null) {
+      final newPage = _pageController.page!.round();
+      if (newPage != _currentPage) {
+        setState(() => _currentPage = newPage);
+        _animationController.reset();
+        _animationController.forward();
+      }
+    }
+  }
+
+  Future<void> _nextPage() async {
+    if (_currentPage < OnboardingData.pages.length - 1) {
+      await _pageController.animateToPage(
+        _currentPage + 1,
+        duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOut,
       );
     } else {
-      // Navigate to the main app screen or perform final action
-      print('Onboarding completed!');
+      _navigateToLogin();
     }
+  }
+
+  void _navigateToLogin() {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const SafetynetLoginScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 500),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Stack(
-            children: [
-              // Background image
-              Image.asset(
-                'assets/images/backgroud.png', // Replace with your image asset
-                height: MediaQuery.of(context).size.height *
-                    0.305, // Adjust the height
-                width: double.infinity,
-                fit: BoxFit.cover,
-              ),
-
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: CustomPaint(
-                  size: Size(MediaQuery.of(context).size.width, 50),
-                  painter: SlantLinesPainter(),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(
-            height: 64,
+          _buildHeader(size),
+          const SizedBox(height: 32),
+          Expanded(child: _buildPageView()),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: PageIndicator(
+              totalPages: OnboardingData.pages.length,
+              currentPage: _currentPage,
+            ),
           ),
           Expanded(
-            child: PageView(
-              controller: _pageController,
-              children: [
-                OnboardingPage(
-                  title: 'Welcome to SafetyNet',
-                  description:
-                      'Stay safe with quick emergency alerts and real-time collaboration to get help just when you need it.',
-                  imagePath: 'assets/images/onboarding1.png',
-                  buttonText: 'Next',
-                  onPressed: _nextPage,
-                  currentPage: _currentPage,
-                ),
-                OnboardingPage(
-                  title: 'Activate Alerts Quickly',
-                  description:
-                      'Just a few taps to activate alerts. Your emergency contacts get notified instantly.',
-                  imagePath: "assets/images/onboarding2.png",
-                  buttonText: 'Next',
-                  onPressed: _nextPage,
-                  currentPage: _currentPage,
-                ),
-                OnboardingPage(
-                  title: 'Emergency Contacts',
-                  description:
-                      'Manage and update your emergency contacts for quick access in an emergency.',
-                  imagePath: "assets/images/onboarding3.png",
-                  buttonText: 'Get Started',
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SafetynetLoginScreen(),
-                      ), // Push a new screen
-                    );
-                  },
-                  currentPage: _currentPage,
-                ),
-              ],
-            ),
+            child: _buildFooter(),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 48),
-            child: CustomNextButton(
-              onPressed: _currentPage < 2
-                  ? _nextPage
-                  : () {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const SafetynetLoginScreen(),
-                        ), // Push a new screen
-                      );
-                    },
-              text: _currentPage < 2 ? "Next" : "Get Started",
-              enabled: true,
-            ),
-          )
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader(Size size) {
+    return Stack(
+      children: [
+        Hero(
+          tag: 'onboarding_background',
+          child: Image.asset(
+            'assets/images/backgroud.png',
+            height: size.height * 0.3,
+            width: double.infinity,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: CustomPaint(
+            size: Size(size.width, 50),
+            painter: SlantLinesPainter(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPageView() {
+    return PageView.builder(
+      controller: _pageController,
+      itemCount: OnboardingData.pages.length,
+      itemBuilder: (context, index) {
+        final content = OnboardingData.pages[index];
+        return FadeTransition(
+          opacity: _fadeAnimation,
+          child: OnboardingPage(
+            title: content.title,
+            description: content.description,
+            imagePath: content.imagePath,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFooter() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 48, 12, 32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          const SizedBox(height: 24),
+          CustomNextButton(
+            onPressed: _nextPage,
+            text: OnboardingData.pages[_currentPage].buttonText,
+            enabled: true,
+          ),
         ],
       ),
     );
@@ -134,47 +204,64 @@ class _OnboardingScreensState extends State<OnboardingScreens> {
   @override
   void dispose() {
     _pageController.dispose();
+    _animationController.dispose();
     super.dispose();
   }
 }
 
 class SlantLinesPainter extends CustomPainter {
+  static const _darkColor = Color.fromRGBO(74, 76, 75, 1);
+  static const _lightColor = Color.fromRGBO(25, 118, 210, 1);
+
   @override
   void paint(Canvas canvas, Size size) {
     final darkPaint = Paint()
-      ..color = const Color.fromRGBO(74, 76, 75, 1)
+      ..color = _darkColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 9;
+      ..strokeWidth = 9
+      ..strokeCap = StrokeCap.round;
 
     final lightPaint = Paint()
-      ..color = const Color.fromRGBO(25, 118, 210, 1)
+      ..color = _lightColor
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 14;
+      ..strokeWidth = 14
+      ..strokeCap = StrokeCap.round;
 
-    // Reduce the vertical distance the lines travel
-    double verticalTravel =
-        size.height * 0.3; // Adjust this value to change the slant
+    final verticalTravel = size.height * 0.3;
 
-    // First dark line
-    canvas.drawLine(
-      Offset(0, size.height + 16),
-      Offset(size.width - 110, size.height - verticalTravel - 16),
-      darkPaint,
+    // Draw lines with smooth endings
+    _drawSlantLine(
+      canvas,
+      start: Offset(0, size.height + 16),
+      end: Offset(size.width - 110, size.height - verticalTravel - 16),
+      paint: darkPaint,
     );
 
-    // Light line
-    canvas.drawLine(
-      Offset(size.width * 0.34, size.height + 16),
-      Offset(size.width, size.height - verticalTravel - 10),
-      lightPaint,
+    _drawSlantLine(
+      canvas,
+      start: Offset(size.width * 0.34, size.height + 16),
+      end: Offset(size.width, size.height - verticalTravel - 10),
+      paint: lightPaint,
     );
 
-    // Second dark line
-    canvas.drawLine(
-      Offset(size.width * 0, size.height + 60),
-      Offset(size.width - 105, size.height - verticalTravel + 28),
-      darkPaint,
+    _drawSlantLine(
+      canvas,
+      start: Offset(0, size.height + 60),
+      end: Offset(size.width - 105, size.height - verticalTravel + 28),
+      paint: darkPaint,
     );
+  }
+
+  void _drawSlantLine(
+    Canvas canvas, {
+    required Offset start,
+    required Offset end,
+    required Paint paint,
+  }) {
+    final path = Path()
+      ..moveTo(start.dx, start.dy)
+      ..lineTo(end.dx, end.dy);
+    canvas.drawPath(path, paint);
   }
 
   @override

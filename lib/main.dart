@@ -5,11 +5,30 @@ import 'package:safetynet/screens/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  try {
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform, name: "safetynet");
+
+    // Test Firestore connection
+    await FirebaseFirestore.instance
+        .collection('test')
+        .doc('test')
+        .set({'test': 'test'});
+
+    print('Firebase initialized successfully');
+  } catch (e) {
+    print('Firebase initialization error: $e');
+    // Handle the error appropriately
+  }
+
+
+  FirebaseFirestore.instance.settings = const Settings(
+    persistenceEnabled: true,
+    cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
   );
 
   runApp(

@@ -39,7 +39,7 @@ class SafetynetLoginScreen extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const SafetynetLoginScreen()),
+                                builder: (context) => const LoginScreen()),
                           );
                         },
                         style: ElevatedButton.styleFrom(

@@ -16,7 +16,7 @@ class SafetyNetSplashScreenState extends State<SafetyNetSplashScreen>
   void _navigateToOnboarding() {
     Future.delayed(const Duration(seconds: 2), () {
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const OnboardingScreens()),
+        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
       );
     });
   }
