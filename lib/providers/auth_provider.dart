@@ -102,7 +102,6 @@ class AuthNotifier extends StateNotifier<AuthState> {
         (route) => false,
       );
     } catch (e) {
-      print(e); 
       state = state.copyWith(isLoading: false, error: e.toString());
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
