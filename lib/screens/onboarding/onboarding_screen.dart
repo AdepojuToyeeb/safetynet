@@ -117,86 +117,106 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final isLandscape = size.width > size.height;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      backgroundColor: Colors.white,  
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildHeader(constraints),
+              const SizedBox(height: 32),
+              Expanded(child: _buildPageView(isLandscape, constraints)),
+              Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: constraints.maxWidth * 0.04,
+                ),
+                child: PageIndicator(
+                  totalPages: OnboardingData.pages.length,
+                  currentPage: _currentPage,
+                ),
+              ),
+              _buildFooter(constraints),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildHeader(BoxConstraints constraints) {
+    final headerHeight =
+        constraints.maxHeight * (constraints.maxWidth > 600 ? 0.25 : 0.3);
+
+    return SizedBox(
+      height: headerHeight,
+      child: Stack(
         children: [
-          _buildHeader(size),
-          const SizedBox(height: 32),
-          Expanded(child: _buildPageView()),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
-            child: PageIndicator(
-              totalPages: OnboardingData.pages.length,
-              currentPage: _currentPage,
+          Hero(
+            tag: 'onboarding_background',
+            child: Image.asset(
+              'assets/images/backgroud.png',
+              height: headerHeight,
+              width: double.infinity,
+              fit: BoxFit.cover,
             ),
           ),
-          Expanded(
-            child: _buildFooter(),
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: CustomPaint(
+              size: Size(constraints.maxWidth, headerHeight * 0.2),
+              painter: SlantLinesPainter(),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeader(Size size) {
-    return Stack(
-      children: [
-        Hero(
-          tag: 'onboarding_background',
-          child: Image.asset(
-            'assets/images/backgroud.png',
-            height: size.height * 0.3,
-            width: double.infinity,
-            fit: BoxFit.cover,
-          ),
-        ),
-        Positioned(
-          bottom: 0,
-          left: 0,
-          right: 0,
-          child: CustomPaint(
-            size: Size(size.width, 50),
-            painter: SlantLinesPainter(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPageView() {
+  Widget _buildPageView(bool isLandscape, BoxConstraints constraints) {
     return PageView.builder(
       controller: _pageController,
       itemCount: OnboardingData.pages.length,
       itemBuilder: (context, index) {
         final content = OnboardingData.pages[index];
-        return FadeTransition(
-          opacity: _fadeAnimation,
-          child: OnboardingPage(
-            title: content.title,
-            description: content.description,
-            imagePath: content.imagePath,
-          ),
+        return Column(
+          children: [
+            FadeTransition(
+              opacity: _fadeAnimation,
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.of(context).size.width * 0.02,
+                ),
+                child: OnboardingPage(
+                  title: content.title,
+                  description: content.description,
+                  imagePath: content.imagePath,
+                ),
+              ),
+            ),
+            SizedBox(height: constraints.maxHeight * 0.02),
+          ],
         );
       },
     );
   }
 
-  Widget _buildFooter() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 48, 12, 32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          const SizedBox(height: 24),
-          CustomNextButton(
-            onPressed: _nextPage,
-            text: OnboardingData.pages[_currentPage].buttonText,
-            enabled: true,
-          ),
-        ],
+  Widget _buildFooter(BoxConstraints constraints) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: constraints.maxWidth * 0.05,
+        right: constraints.maxWidth * 0.05,
+        bottom: constraints.maxHeight * 0.03,
+        top: constraints.maxHeight * 0.02,
+      ),
+      child: CustomNextButton(
+        onPressed: _nextPage,
+        text: OnboardingData.pages[_currentPage].buttonText,
+        enabled: true,
       ),
     );
   }

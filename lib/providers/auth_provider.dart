@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:safetynet/screens/main/main_app.dart';
 
 class AuthService {
@@ -24,6 +25,14 @@ class AuthService {
     await Future.wait([
       _auth.signOut(),
     ]);
+  }
+
+  User? getCurrentUser() {
+    return _auth.currentUser;
+  }
+
+  bool isLoggedIn() {
+    return _auth.currentUser != null;
   }
 
   // Error Handler
@@ -50,7 +59,18 @@ class AuthService {
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
-  AuthNotifier(this._authService) : super(AuthState());
+  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  AuthNotifier(this._authService) : super(AuthState()) {
+    _checkLoginStatus();
+  }
+
+  Future<void> _checkLoginStatus() async {
+    final token = await _storage.read(key: 'auth_token');
+    if (token != null) {
+      state = state.copyWith(isLoggedIn: true);
+    }
+  }
 
   void setEmail(String email) {
     state = state.copyWith(email: email);
@@ -71,7 +91,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> signIn(BuildContext context) async {
     if (state.email.isEmpty || state.password.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text(
             'Please enter email and password',
@@ -96,6 +116,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
           state.email, state.password);
       state = state.copyWith(isLoading: false);
       if (!context.mounted) return;
+      await _storage.write(key: 'auth_token', value: 'your_generated_token');
+      state = state.copyWith(isLoggedIn: true, isLoading: false);
       await Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),
@@ -117,8 +139,10 @@ class AuthState {
   final String password;
   final bool isLoading;
   final String? error;
+  final bool isLoggedIn;
 
   AuthState({
+    this.isLoggedIn = false,
     this.email = '',
     this.password = '',
     this.isLoading = false,
@@ -127,6 +151,7 @@ class AuthState {
 
   AuthState copyWith({
     String? email,
+    bool? isLoggedIn,
     String? password,
     bool? isLoading,
     String? error,
@@ -136,6 +161,7 @@ class AuthState {
       password: password ?? this.password,
       isLoading: isLoading ?? this.isLoading,
       error: error,
+      isLoggedIn: isLoggedIn ?? this.isLoggedIn,
     );
   }
 }

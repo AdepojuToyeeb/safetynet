@@ -1,26 +1,25 @@
 import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:safetynet/utils/signaling2.dart';
 import 'package:safetynet/utils/snack_message.dart';
-import 'package:geolocator/geolocator.dart';
 
 typedef ExecuteCallback = void Function();
 typedef ExecuteFutureCallback = Future<void> Function();
 
-class VideoCallRoom extends StatefulWidget {
-  const VideoCallRoom({super.key});
+class VideoJoinRoom extends StatefulWidget {
+  final String roomId;
+
+  const VideoJoinRoom({super.key, required this.roomId});
 
   @override
   VideoCallRoomState createState() => VideoCallRoomState();
 }
 
-class VideoCallRoomState extends State<VideoCallRoom> {
+class VideoCallRoomState extends State<VideoJoinRoom> {
   static const _chars =
       'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
   static final _rnd = Random();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   static String getRandomString(int length) =>
       String.fromCharCodes(Iterable.generate(
@@ -32,17 +31,13 @@ class VideoCallRoomState extends State<VideoCallRoom> {
   final Map<String, RTCVideoRenderer> remoteRenderers = {};
   final Map<String, bool?> remoteRenderersLoading = {};
 
-  late String roomId;
-  Position? _currentPosition;
-
   bool localRenderOk = false;
   bool error = false;
 
   @override
   void initState() {
     super.initState();
-    roomId = signaling.localDisplayName;
-    _getCurrentLocation();
+
     signaling.onAddLocalStream = (peerUuid, displayName, stream) {
       setState(() {
         localRenderer.srcObject = stream;
@@ -95,70 +90,19 @@ class VideoCallRoomState extends State<VideoCallRoom> {
   @override
   void dispose() {
     localRenderer.dispose();
-    _updateRoomStatus(false);
+
     disposeRemoteRenderers();
-    signaling.stopUserMedia();
+
     super.dispose();
-  }
-
-  Future<void> _getCurrentLocation() async {
-    try {
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          SnackMsg.showError(context, 'Location permissions are denied');
-          return;
-        }
-      }
-
-      // Get current position
-      Position position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      setState(() => _currentPosition = position);
-
-      // Save room data to Firebase
-      await _saveRoomToFirebase();
-    } catch (e) {
-      SnackMsg.showError(context, 'Error getting location: $e');
-    }
-  }
-
-  Future<void> _saveRoomToFirebase() async {
-    if (_currentPosition != null) {
-      try {
-        await _firestore.collection('rooms').doc(roomId).set({
-          'roomId': roomId,
-          'createdAt': FieldValue.serverTimestamp(),
-          'location': GeoPoint(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-          ),
-          'userId': signaling.localDisplayName,
-          'active': true,
-        });
-      } catch (e) {
-        SnackMsg.showError(context, 'Error saving room data: $e');
-      }
-    }
-  }
-
-  Future<void> _updateRoomStatus(bool active) async {
-    try {
-      await _firestore.collection('rooms').doc(roomId).update({
-        'active': active,
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      SnackMsg.showError(context, 'Error updating room status: $e');
-    }
   }
 
   Future<void> initCamera() async {
     await localRenderer.initialize();
     await doTry(runAsync: () => signaling.openUserMedia());
+    await doTry(
+      runSync: () => setState(() => signaling.muteMic()),
+    );
+    
   }
 
   void disposeRemoteRenderers() {
@@ -197,25 +141,23 @@ class VideoCallRoomState extends State<VideoCallRoom> {
     setState(() => error = false);
 
     await signaling.reOpenUserMedia();
-    await signaling.join(roomId);
+    await signaling.join(widget.roomId);
   }
 
   Future<void> hangUp(bool exit) async {
-    try {
-      await signaling.deleteRoom(roomId);
+    setState(() {
+      error = false;
 
-      // Close signaling and exit the room
-      await signaling.hangUp(exit);
-      setState(() {
-        error = false;
-        roomId = '';
-        disposeRemoteRenderers();
-      });
-      // Pop the navigation if we're exiting
-      Navigator.of(context).pop();
-    } catch (e) {
-      SnackMsg.showError(context, 'Error during hangup: $e');
-    }
+      // if (exit) {
+      //   widget.roomId = '';
+      // }
+    });
+
+    await signaling.hangUp(exit);
+
+    setState(() {
+      disposeRemoteRenderers();
+    });
   }
 
   bool isMicMuted() {
@@ -231,12 +173,10 @@ class VideoCallRoomState extends State<VideoCallRoom> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Live Broadcast - ${signaling.localDisplayName}',
-          style: const TextStyle(fontSize: 16),
-        ),
-        automaticallyImplyLeading: false,
-      ),
+          title: Text(
+        widget.roomId,
+        style: const TextStyle(fontSize: 12),
+      )),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: FutureBuilder<int>(
         future: signaling.cameraCount(),
@@ -254,57 +194,82 @@ class VideoCallRoomState extends State<VideoCallRoom> {
                 ),
               ),
             ],
-            if (roomId.length > 2) ...[
+            if (widget.roomId.length > 2) ...[
               if (error) ...[
                 FloatingActionButton(
                   tooltip: 'Retry call',
+                  child: const Icon(Icons.add_call),
                   backgroundColor: Colors.green,
                   onPressed: () async => await doTry(
                     runAsync: () => join(),
                     onError: () => hangUp(false),
                   ),
-                  child: const Icon(Icons.add_call),
                 ),
               ],
               if (localRenderOk && signaling.isJoined()) ...[
-                if (cameraCountSnap.hasData &&
-                    cameraCountSnap.requireData > 1) ...[
-                  FloatingActionButton(
-                    tooltip: 'Switch camera',
-                    backgroundColor: Colors.grey,
-                    child: const Icon(Icons.switch_camera),
-                    onPressed: () async => await doTry(
-                      runAsync: () => signaling.switchCamera(),
-                    ),
-                  )
-                ],
-                FloatingActionButton(
-                  tooltip: isMicMuted() ? 'Un-mute mic' : 'Mute mic',
-                  backgroundColor:
-                      isMicMuted() ? Colors.redAccent : Colors.grey,
-                  child: isMicMuted()
-                      ? const Icon(Icons.mic_off)
-                      : const Icon(Icons.mic_outlined),
-                  onPressed: () => doTry(
-                    runSync: () => setState(() => signaling.muteMic()),
-                  ),
-                ),
+                // FloatingActionButton(
+                //   tooltip: signaling.isScreenSharing()
+                //       ? 'Change screen sharing'
+                //       : 'Start screen sharing',
+                //   backgroundColor:
+                //       signaling.isScreenSharing() ? Colors.amber : Colors.grey,
+                //   child: const Icon(Icons.screen_share_outlined),
+                //   onPressed: () async => await doTry(
+                //     runAsync: () => signaling.screenSharing(),
+                //   ),
+                // ),
+                // if (signaling.isScreenSharing()) ...[
+                //   FloatingActionButton(
+                //     tooltip: 'Stop screen sharing',
+                //     backgroundColor: Colors.redAccent,
+                //     child: const Icon(Icons.stop_screen_share_outlined),
+                //     onPressed: () => signaling.stopScreenSharing(),
+                //   ),
+                // ],
+                // if (cameraCountSnap.hasData &&
+                //     cameraCountSnap.requireData > 1) ...[
+                //   FloatingActionButton(
+                //     tooltip: 'Switch camera',
+                //     backgroundColor: Colors.grey,
+                //     child: const Icon(Icons.switch_camera),
+                //     onPressed: () async => await doTry(
+                //       runAsync: () => signaling.switchCamera(),
+                //     ),
+                //   )
+                // ],
+                // FloatingActionButton(
+                //   tooltip: isMicMuted() ? 'Un-mute mic' : 'Mute mic',
+                //   backgroundColor:
+                //       isMicMuted() ? Colors.redAccent : Colors.grey,
+                //   child: isMicMuted()
+                //       ? const Icon(Icons.mic_off)
+                //       : const Icon(Icons.mic_outlined),
+                //   onPressed: () => doTry(
+                //     runSync: () => setState(() => signaling.muteMic()),
+                //   ),
+                // ),
                 FloatingActionButton(
                   tooltip: 'Hangup',
                   backgroundColor: Colors.red,
                   child: const Icon(Icons.call_end),
                   onPressed: () => hangUp(false),
                 ),
-              ] else ...[
                 FloatingActionButton(
-                  tooltip: 'Start call',
-                  backgroundColor: Colors.green,
-                  onPressed: () async => await doTry(
-                    runAsync: () => join(),
-                    onError: () => hangUp(false),
-                  ),
-                  child: const Icon(Icons.call),
+                  tooltip: 'Exit',
+                  backgroundColor: Colors.red,
+                  child: const Icon(Icons.exit_to_app),
+                  onPressed: () => hangUp(true),
                 ),
+              ] else ...[
+                // FloatingActionButton(
+                //   tooltip: 'Start call',
+                //   child: const Icon(Icons.call),
+                //   backgroundColor: Colors.green,
+                //   onPressed: () async => await doTry(
+                //     runAsync: () => join(),
+                //     onError: () => hangUp(false),
+                //   ),
+                // ),
               ],
             ],
           ],
@@ -323,8 +288,9 @@ class VideoCallRoomState extends State<VideoCallRoom> {
             //       const Text("Room ID: "),
             //       Flexible(
             //         child: TextFormField(
-            //           initialValue: roomId,
-            //           onChanged: (value) => setState(() => roomId = value),
+            //           initialValue: widget.roomId,
+            //           onChanged: (value) =>
+            //               setState(() => widget.roomId = value),
             //         ),
             //       )
             //     ],
@@ -335,18 +301,7 @@ class VideoCallRoomState extends State<VideoCallRoom> {
             Expanded(
               child: view(
                 children: [
-                  if (localRenderOk) ...[
-                    Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                        // padding: const EdgeInsets.all(4),
-
-                        child: RTCVideoView(localRenderer,
-                            mirror: !signaling.isScreenSharing()),
-                      ),
-                    ),
-                  ],
-                  // for (final remoteRenderer in remoteRenderers.entries) ...[
+                  // if (localRenderOk) ...[
                   //   Expanded(
                   //     child: Container(
                   //       margin: const EdgeInsets.all(4),
@@ -356,16 +311,31 @@ class VideoCallRoomState extends State<VideoCallRoom> {
                   //           color: const Color(0XFF2493FB),
                   //         ),
                   //       ),
-                  //       child: false ==
-                  //               remoteRenderersLoading[remoteRenderer
-                  //                   .key] // && true == remoteRenderer.value.srcObject?.active
-                  //           ? RTCVideoView(remoteRenderer.value)
-                  //           : const Center(
-                  //               child: CircularProgressIndicator(),
-                  //             ),
+                  //       child: RTCVideoView(localRenderer,
+                  //           mirror: !signaling.isScreenSharing()),
                   //     ),
                   //   ),
                   // ],
+                  for (final remoteRenderer in remoteRenderers.entries) ...[
+                    Expanded(
+                      child: Container(
+                        margin: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: const Color(0XFF2493FB),
+                          ),
+                        ),
+                        child: false ==
+                                remoteRenderersLoading[remoteRenderer
+                                    .key] // && true == remoteRenderer.value.srcObject?.active
+                            ? RTCVideoView(remoteRenderer.value)
+                            : const Center(
+                                child: CircularProgressIndicator(),
+                              ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

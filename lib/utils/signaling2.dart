@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:math';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -12,7 +13,7 @@ typedef StreamStateCallback = void Function(
     String peerUuid, String displayName, MediaStream? stream);
 typedef ConnectionClosedCallback = RTCVideoRenderer Function();
 
-class Signaling {
+class Signaling2 {
   MediaStream? _localStream, _shareStream;
   StreamStateCallback? onAddRemoteStream, onAddLocalStream;
   PeerCallback? onRemoveRemoteStream,
@@ -36,7 +37,7 @@ class Signaling {
 
   StreamSubscription? _listenerSdp, _listenerIce;
 
-  Signaling({required this.localDisplayName});
+  Signaling2({required this.localDisplayName});
 
   final _iceServers = {
     'iceServers': [
@@ -188,6 +189,7 @@ class Signaling {
 
     _startListenSdp();
   }
+
 
   void _startListenIce() {
     // WebRTC ICE
@@ -489,6 +491,38 @@ class Signaling {
     }
 
     onAddLocalStream?.call('', localDisplayName, _localStream!);
+  }
+ 
+Future<void> stopUserMedia() async {
+  if (_localStream != null) {
+    // Disable camera
+    final videoTracks = _localStream!.getVideoTracks();
+    for (final track in videoTracks) {
+      track.enabled = false; // Turn off camera
+      await track.stop(); // Stop the camera track
+    }
+
+    // Disable microphone
+    final audioTracks = _localStream!.getAudioTracks();
+    for (final track in audioTracks) {
+      track.enabled = false; // Mute microphone
+      await track.stop(); // Stop the audio track
+    }
+
+    // Dispose of the stream
+    await _localStream?.dispose();
+    _localStream = null;
+  }
+}
+Future<void> deleteRoom(String roomId) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection("rooms")
+          .doc(roomId)
+          .delete();
+    } catch (e) {
+      onGenericError?.call('Error deleting room: $e');
+    }
   }
 
   Future<void> _writePeer(Map<String, dynamic> msg) async {

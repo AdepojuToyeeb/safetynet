@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:safetynet/providers/auth_provider.dart';
+import 'package:safetynet/screens/main/main_app.dart';
 import 'package:safetynet/screens/splash_screen.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -25,7 +27,6 @@ void main() async {
     // Handle the error appropriately
   }
 
-
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
     cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
@@ -47,19 +48,21 @@ final theme = ThemeData(
   textTheme: GoogleFonts.poppinsTextTheme(),
 );
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   // This widget is the root of your application.
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authService = ref.read(authServiceProvider);
+
     return MaterialApp(
       builder: FToastBuilder(),
       debugShowCheckedModeBanner: false,
       title: 'Safety Net',
       theme: theme,
-      home: const SafetyNetSplashScreen(),
-      // home: const CategoriesScreen(),
+      //  home: const SafetyNetSplashScreen(),
+      home: authService.isLoggedIn() ? const MainScreen() : const SafetyNetSplashScreen(),
     );
   }
 }

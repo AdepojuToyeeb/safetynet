@@ -47,6 +47,18 @@ class SignupWidget extends ConsumerWidget {
     ref.listen(signupProvider, (previous, next) {
       // Show error snackbar if there is an error
       if (next.hasError) {
+        print(next.error);
+        print(
+            "[firebase_auth/weak-password] Password should be at least 6 characters"
+                .replaceAll(RegExp(r'\[.*?\]'), '')
+                .trim());
+
+      //  final errorMessage =
+      //      ( next.error)?.replaceAll(RegExp(r'\[.*?\]'), '').trim() ??
+      //           '';
+      //   final cleanedMessage = errorMessage.replaceAll(RegExp(r'\s+'), ' ');
+      //   print('cleanedMessage: $cleanedMessage');
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
@@ -104,6 +116,7 @@ class SignupWidget extends ConsumerWidget {
     }
 
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
@@ -178,7 +191,7 @@ class SignupWidget extends ConsumerWidget {
                 onPressed: () {
                   validateInput(ref, signupState);
                 },
-                text: "Sign Up",
+                text: "Sign up",
                 enabled: !signupState.isLoading,
                 isLoading: signupState.isLoading,
               ),

@@ -30,7 +30,6 @@ class SafetyNetSplashScreenState extends State<SafetyNetSplashScreen>
       vsync: this,
     );
 
-
     _textAnimation = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(
         parent: _controller,
@@ -68,6 +67,20 @@ class SafetyNetSplashScreenState extends State<SafetyNetSplashScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Opacity(
+                              opacity: 1.0,
+                              child: Image.asset(
+                                "assets/images/splash_logo.png",
+                                fit: BoxFit.scaleDown,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return const Icon(Icons.error,
+                                      color: Colors.red);
+                                },
+                              ),
+                            ),
+                            const SizedBox(
+                              width: 3,
+                            ),
+                            Opacity(
                               opacity: _textAnimation.value,
                               child: const Text(
                                 'afetyNet.',
@@ -80,21 +93,25 @@ class SafetyNetSplashScreenState extends State<SafetyNetSplashScreen>
                             ),
                           ],
                         ),
-                        const SizedBox(
-                          height: 1,
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 60),
-                          child: Align(
-                            child: Text(
-                              'Help in a flash',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white.withOpacity(0.8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 120,
                               ),
-                            ),
-                          ),
-                        )
+                              child: Align(
+                                child: Text(
+                                  'Help in a flash',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.white.withOpacity(0.8),
+                                  ),
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
                       ],
                     );
                   },
