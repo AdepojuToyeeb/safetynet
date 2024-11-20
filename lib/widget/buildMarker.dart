@@ -9,73 +9,31 @@ import 'package:safetynet/utils/helpers.dart';
 Marker buildMarker(BuildContext context, LatLng coordinates, String id,
     String type, String description) {
   if (description == 'alert') {
-    return Marker(
-      point: coordinates,
-      width: 150,
-      height: 250,
-      child: Column(
-        children: [
-          // Card(
-          //   child: SizedBox(
-          //     width: 400,
-          //     height: 130,
-          //     child: Padding(
-          //       padding: const EdgeInsets.all(5),
-          //       child: Column(
-          //         crossAxisAlignment: CrossAxisAlignment.center,
-          //         children: [
-          //           Padding(
-          //             padding: const EdgeInsets.all(8),
-          //             child: Text(Helpers.replaceUnderscoreAndCapitalise(type),
-          //                 textAlign: TextAlign.center,
-          //                 style: const TextStyle(
-          //                     color: Colors.orange,
-          //                     fontSize: 13,
-          //                     fontWeight: FontWeight.bold)),
-          //           ),
-          //           const SizedBox(height: 10),
-          //           // ElevatedButton(
-          //           //   onPressed: () async {
-          //           //     Navigator.of(context).push(
-          //           //       MaterialPageRoute(
-          //           //           builder: (context) => ViewAllAlertsPage(id: id)),
-          //           //     );
-          //           //   },
-          //           //   style: ElevatedButton.styleFrom(
-          //           //     backgroundColor: ThemeConstant.primary,
-          //           //   ),
-          //           //   child: const SizedBox(
-          //           //     width: 70,
-          //           //     height: 15,
-          //           //     child: Center(
-          //           //         child: Text('View Details',
-          //           //             style: TextStyle(
-          //           //                 color: Colors.white,
-          //           //                 fontSize: 11,
-          //           //                 fontWeight: FontWeight.bold))),
-          //           //   ),
-          //           // ),
-          //         ],
-          //       ),
-          //     ),
-          //   ),
-          // ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => VideoJoinRoom(
-                    roomId: id,
-                  ),
-                ),
-              );
-            },
-            child: const Icon(Icons.person),
+    return 
+
+    Marker(
+  point: coordinates,
+  width: 150,
+  height: 250,
+  child: GestureDetector(
+    behavior: HitTestBehavior.opaque,  // Add this line
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => VideoJoinRoom(
+            roomId: id,
           ),
-        ],
-      ),
-    );
+        ),
+      );
+    },
+    child:const Icon(
+      Icons.info,
+      color: Colors.red,
+      size: 36,
+    ),
+  ),
+);
   } else {
     return Marker(
       point: coordinates,

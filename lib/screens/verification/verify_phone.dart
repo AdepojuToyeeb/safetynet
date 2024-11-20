@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_number_input/intl_phone_number_input.dart';
 import 'package:safetynet/screens/verification/confirm_phone_number.dart';
@@ -14,6 +16,61 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
   final TextEditingController controller = TextEditingController();
   String initialCountry = 'NG';
   PhoneNumber number = PhoneNumber(isoCode: 'NG');
+  bool _isLoading = false;
+
+  Future<void> _saveUserDetails() async {
+    print("controller");
+    print(controller);
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      // Get the current user after phone authentication
+      User? currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser == null) {
+        // If user is not logged in, show an error
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Please complete phone verification first')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // // Update user profile with name
+      // await currentUser.updateProfile(
+      //   DisplayNameUpdater(displayName: _nameController.text.trim()),
+      // );
+
+      // Save additional user details to Firestore
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .set({
+        'phoneNumber': controller.text,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
+      // Navigate to next screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ConfirmPhoneNumber()),
+      );
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving details: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -96,15 +153,16 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
                 ),
                 CustomNextButton(
                   onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const ConfirmPhoneNumber(),
-                      ),
-                    );
+                    // Navigator.push(
+                    //   context,
+                    //   MaterialPageRoute(
+                    //     builder: (context) => const ConfirmPhoneNumber(),
+                    //   ),
+                    // );
+                    _isLoading ? () {} : _saveUserDetails();
                   },
-                  text: "Proceed",
-                  enabled: true,
+                  text: _isLoading ? "Proceeding" : "Proceed",
+                  enabled: !_isLoading,
                 )
               ],
             ),

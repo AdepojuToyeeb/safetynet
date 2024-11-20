@@ -40,7 +40,7 @@ class EmergencySetupScreen extends StatelessWidget {
               const SizedBox(height: 40),
               _buildOptionTile(
                 icon: Icons.person_add_outlined,
-                title: 'Add Emergency Contact',
+                title: 'Add Emergency Contacts',
                 subtitle:
                     'Select people to be contacted immediately in case of any emergencies.',
                 onTap: () {
@@ -50,15 +50,15 @@ class EmergencySetupScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 40),
-              _buildOptionTile(
-                icon: Icons.lock_outline,
-                title: 'Set Emergency Pin',
-                subtitle:
-                    'To cancel your alerts and activate/deactivate other alerts',
-                onTap: () {
-                  // Implement your functionality here
-                },
-              ),
+              // _buildOptionTile(
+              //   icon: Icons.lock_outline,
+              //   title: 'Set Emergency Pin',
+              //   subtitle:
+              //       'To cancel your alerts and activate/deactivate other alerts',
+              //   onTap: () {
+              //     // Implement your functionality here
+              //   },
+              // ),
             ],
           ),
         ),

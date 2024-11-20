@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:safetynet/screens/auth/login_screen.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 
 class SuccesfulEmergency extends StatelessWidget {
@@ -37,7 +38,13 @@ class SuccesfulEmergency extends StatelessWidget {
             ),
             const SizedBox(height: 20),
             CustomNextButton(
-                onPressed: () {}, text: "Go to Menu", enabled: true)
+                onPressed: () {
+                   Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),),
+                  );
+                }, text: "Go to Login", enabled: true)
           ],
         ),
       ),

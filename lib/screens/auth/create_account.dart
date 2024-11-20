@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:safetynet/screens/auth/sign_up.dart';
-import 'package:safetynet/screens/verification/verify_phone.dart';
+// import 'package:safetynet/screens/verification/verify_phone.dart';
 
 class CreateAccountScreen extends StatelessWidget {
   const CreateAccountScreen({super.key});

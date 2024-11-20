@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:safetynet/screens/emergency/add_emergency.dart';
-import 'package:safetynet/screens/verification/confirm_phone_number.dart';
+// import 'package:safetynet/screens/verification/confirm_phone_number.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
 
 class FullNameScreen extends StatefulWidget {
@@ -13,16 +15,59 @@ class FullNameScreen extends StatefulWidget {
 class _FullNameScreenState extends State<FullNameScreen> {
   final _formKey = GlobalKey<FormState>();
   var _enteredName = '';
+  bool _isLoading = false;
 
-  void _saveItem() {
+  void _saveItem() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const EmergencySetupScreen(),
-        ),
-      );
+      setState(() {
+        _isLoading = true;
+      });
+
+      try {
+        // Get current user's UID
+        final User? currentUser = FirebaseAuth.instance.currentUser;
+
+        if (currentUser == null) {
+          // Handle case where no user is logged in
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No user is currently logged in')),
+          );
+          setState(() {
+            _isLoading = false;
+          });
+          return;
+        }
+
+        // Save name to Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({
+          'fullName': _enteredName,
+          'email': currentUser.email,
+          'uid': currentUser.uid,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+
+        // Navigate to next screen
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const EmergencySetupScreen(),
+          ),
+        );
+      } catch (error) {
+        // Handle any errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving name: $error')),
+        );
+      } finally {
+        // Reset loading state
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -113,9 +158,11 @@ class _FullNameScreenState extends State<FullNameScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CustomNextButton(
-                  onPressed: _saveItem,
-                  text: "Proceed",
-                  enabled: true,
+                  onPressed: () {
+                    _isLoading ? () {} : _saveItem();
+                  },
+                  text: _isLoading ? "Saving..." : "Proceed",
+                  enabled: !_isLoading,
                 )
               ],
             ),

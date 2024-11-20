@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:safetynet/screens/main/video_call.dart';
 import 'package:safetynet/screens/main/video_join.dart';
 import 'package:safetynet/utils/signaling.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:safetynet/widget/map.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -19,6 +21,10 @@ class MainScreenState extends State<MainScreen> {
   String? roomId;
   TextEditingController textEditingController = TextEditingController(text: '');
 
+  String userName = 'Loading...';
+  String userLocation = 'Fetching location...';
+  String userProfilePicUrl = '';
+
   @override
   void initState() {
     _localRenderer.initialize();
@@ -30,6 +36,30 @@ class MainScreenState extends State<MainScreen> {
     });
 
     super.initState();
+    _fetchUserDetails();
+  }
+
+  Future<void> _fetchUserDetails() async {
+    try {
+      // Get current authenticated user
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .get();
+        setState(() {
+          userName = userDoc['fullName'] ?? 'User';
+          userLocation = '';
+        });
+      }
+    } catch (e) {
+      print('Error fetching user details: $e');
+      setState(() {
+        userName = '';
+        userLocation = '';
+      });
+    }
   }
 
   @override
@@ -57,15 +87,18 @@ class MainScreenState extends State<MainScreen> {
                   children: [
                     Container(
                       color: Colors.white,
-                      padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Hello Christyd!',
-                            style: TextStyle(
+                          Text(
+                            'Hello, $userName',
+                            style: const TextStyle(
                                 fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(
+                            height: 4,
                           ),
                           const Row(
                             children: [
@@ -85,22 +118,9 @@ class MainScreenState extends State<MainScreen> {
                           const SizedBox(
                             width: 8,
                           ),
-                          TextField(
-                            decoration: InputDecoration(
-                              hintText: 'Search zones...',
-                              prefixIcon: const Icon(Icons.search),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              contentPadding:
-                                  const EdgeInsets.symmetric(vertical: 0),
-                            ),
-                          ),
-                    
                         ],
                       ),
-                    )
-                    ,
+                    ),
                     const Expanded(child: RoomMapWidget())
                   ],
                 ),
@@ -117,20 +137,20 @@ class MainScreenState extends State<MainScreen> {
             IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
             const SizedBox(width: 32), // Space for FAB
             IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
-            // IconButton(icon: const Icon(Icons.person), onPressed: () {}),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const VideoJoinRoom(
-                      roomId: "ajhuR5qqwDR5wECszGnc",
-                    ),
-                  ),
-                );
-              },
-              child: const Icon(Icons.person),
-            ),
+            IconButton(icon: const Icon(Icons.person), onPressed: () {}),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     Navigator.push(
+            //       context,
+            //       MaterialPageRoute(
+            //         builder: (context) => const VideoJoinRoom(
+            //           roomId: "ajhuR5qqwDR5wECszGnc",
+            //         ),
+            //       ),
+            //     );
+            //   },
+            //   child: const Icon(Icons.person),
+            // ),
           ],
         ),
       ),
@@ -151,4 +171,8 @@ class MainScreenState extends State<MainScreen> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+}
+
+extension on User {
+  get fullName => null;
 }

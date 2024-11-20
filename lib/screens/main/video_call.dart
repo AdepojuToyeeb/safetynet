@@ -255,17 +255,17 @@ class VideoCallRoomState extends State<VideoCallRoom> {
               ),
             ],
             if (roomId.length > 2) ...[
-              if (error) ...[
-                FloatingActionButton(
-                  tooltip: 'Retry call',
-                  backgroundColor: Colors.green,
-                  onPressed: () async => await doTry(
-                    runAsync: () => join(),
-                    onError: () => hangUp(false),
-                  ),
-                  child: const Icon(Icons.add_call),
-                ),
-              ],
+              // if (error) ...[
+              //   FloatingActionButton(
+              //     tooltip: 'Retry call',
+              //     backgroundColor: Colors.green,
+              //     onPressed: () async => await doTry(
+              //       runAsync: () => join(),
+              //       onError: () => hangUp(false),
+              //     ),
+              //     child: const Icon(Icons.add_call),
+              //   ),
+              // ],
               if (localRenderOk && signaling.isJoined()) ...[
                 if (cameraCountSnap.hasData &&
                     cameraCountSnap.requireData > 1) ...[

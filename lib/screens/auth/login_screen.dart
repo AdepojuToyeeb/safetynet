@@ -1,8 +1,11 @@
 // auth_service.dart
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:safetynet/providers/auth_provider.dart';
+import 'package:safetynet/screens/main/main_app.dart';
 import 'package:safetynet/widget/custom_next_button.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
@@ -32,11 +35,11 @@ class LoginScreen extends ConsumerWidget {
                 SizedBox(height: 64),
                 SignInButtonWidget(),
                 SizedBox(height: 30),
-                OrDividerWidget(),
-                SizedBox(height: 30),
-                GoogleSignInButtonWidget(),
-                SizedBox(height: 16),
-                AppleSignInButtonWidget(),
+                // OrDividerWidget(),
+                // SizedBox(height: 30),
+                // GoogleSignInButtonWidget(),
+                // SizedBox(height: 16),
+                // AppleSignInButtonWidget(),
                 SizedBox(height: 48), // Add extra space at the bottom
               ],
             ),
@@ -180,6 +183,46 @@ class OrDividerWidget extends StatelessWidget {
 class GoogleSignInButtonWidget extends StatelessWidget {
   const GoogleSignInButtonWidget({super.key});
 
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    try {
+      // Trigger the Google Sign-In process
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication? googleAuth =
+          await googleUser?.authentication;
+
+      if (googleAuth == null) {
+        // User canceled the sign-in process
+        return;
+      }
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the credential
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Navigate to the home screen or next page
+      if (userCredential.user != null) {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      // Handle sign-in errors
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Google Sign-In failed: ${e.toString()}'),
+        backgroundColor: Colors.red,
+      ));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ElevatedButton.icon(
@@ -193,9 +236,7 @@ class GoogleSignInButtonWidget extends StatelessWidget {
         'Sign in with Google',
         style: TextStyle(color: Colors.black),
       ),
-      onPressed: () {
-        // Implement Apple sign in
-      },
+      onPressed: () => _signInWithGoogle(context),
     );
   }
 }

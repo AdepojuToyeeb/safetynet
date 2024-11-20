@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -17,6 +19,9 @@ class EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
   List<Contact> _filteredContacts = [];
   final TextEditingController _searchController = TextEditingController();
   bool _isLoading = true;
+  bool _isSavingLoading = false;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -29,6 +34,41 @@ class EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> saveEmergencyContacts(List<Contact> selectedContacts) async {
+    try {
+      // Get the current user's ID
+      final User? currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        throw Exception('No authenticated user found');
+      }
+
+      // Prepare contacts data to be saved
+      List<Map<String, dynamic>> contactsData = selectedContacts.map((contact) {
+        return {
+          'name': contact.displayName,
+          'phoneNumber':
+              contact.phones.isNotEmpty ? contact.phones.first.number : '',
+          'email':
+              contact.emails.isNotEmpty ? contact.emails.first.address : '',
+        };
+      }).toList();
+
+      // Save to Firestore
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('emergencyContacts')
+          .doc('contacts')
+          .set({
+        'contacts': contactsData,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error saving emergency contacts: $e');
+      rethrow;
+    }
   }
 
   void _showDialog() {
@@ -102,6 +142,44 @@ class EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
     setState(() {
       _selectedContacts.remove(contact);
     });
+  }
+
+  Future<void> _saveAndProceed() async {
+    print("saving...");
+    if (_selectedContacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Please select at least one emergency contact',
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          margin: EdgeInsets.all(16),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSavingLoading = true;
+    });
+
+    try {
+      // Save contacts to Firestore
+      await saveEmergencyContacts(_selectedContacts);
+      // Show success dialog
+      _showDialog();
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save contacts: ${e.toString()}')),
+      );
+    } finally {
+      setState(() {
+        _isSavingLoading = false;
+      });
+    }
   }
 
   @override
@@ -261,9 +339,11 @@ class EmergencyContactsScreenState extends State<EmergencyContactsScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
             child: CustomNextButton(
-              onPressed: _showDialog,
-              text: "Proceed",
-              enabled: _contacts.isNotEmpty,
+              onPressed: (){
+                _isSavingLoading ? () {} : _saveAndProceed();
+              },
+              text: _isSavingLoading ? "Saving..." : "Proceed",
+              enabled: !_isSavingLoading,
             ),
           ),
         ],

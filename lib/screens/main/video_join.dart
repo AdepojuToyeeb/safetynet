@@ -75,11 +75,13 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
 
     signaling.onConnectionError = (peerUuid, displayName) {
       SnackMsg.showError(context, 'Connection failed with $displayName');
+      Navigator.of(context).pop();
       error = true;
     };
 
     signaling.onGenericError = (errorText) {
       SnackMsg.showError(context, errorText);
+      Navigator.of(context).pop();
       error = true;
     };
 
@@ -90,9 +92,8 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
   @override
   void dispose() {
     localRenderer.dispose();
-
     disposeRemoteRenderers();
-
+    signaling.stopUserMedia();
     super.dispose();
   }
 
@@ -102,7 +103,6 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
     await doTry(
       runSync: () => setState(() => signaling.muteMic()),
     );
-    
   }
 
   void disposeRemoteRenderers() {
@@ -145,19 +145,19 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
   }
 
   Future<void> hangUp(bool exit) async {
-    setState(() {
-      error = false;
+    try {
+      // Close signaling and exit the room
+      await doTry(runAsync: () => signaling.hangUp(exit));
 
-      // if (exit) {
-      //   widget.roomId = '';
-      // }
-    });
-
-    await signaling.hangUp(exit);
-
-    setState(() {
-      disposeRemoteRenderers();
-    });
+      setState(() {
+        error = false;
+        disposeRemoteRenderers();
+      });
+      // Pop the navigation if we're exiting
+      Navigator.of(context).pop();
+    } catch (e) {
+      SnackMsg.showError(context, 'Error during hangup: $e');
+    }
   }
 
   bool isMicMuted() {
@@ -198,12 +198,12 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
               if (error) ...[
                 FloatingActionButton(
                   tooltip: 'Retry call',
-                  child: const Icon(Icons.add_call),
                   backgroundColor: Colors.green,
                   onPressed: () async => await doTry(
                     runAsync: () => join(),
                     onError: () => hangUp(false),
                   ),
+                  child: const Icon(Icons.restart_alt),
                 ),
               ],
               if (localRenderOk && signaling.isJoined()) ...[
@@ -254,12 +254,12 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
                   child: const Icon(Icons.call_end),
                   onPressed: () => hangUp(false),
                 ),
-                FloatingActionButton(
-                  tooltip: 'Exit',
-                  backgroundColor: Colors.red,
-                  child: const Icon(Icons.exit_to_app),
-                  onPressed: () => hangUp(true),
-                ),
+                // FloatingActionButton(
+                //   tooltip: 'Exit',
+                //   backgroundColor: Colors.red,
+                //   child: const Icon(Icons.exit_to_app),
+                //   onPressed: () => hangUp(true),
+                // ),
               ] else ...[
                 // FloatingActionButton(
                 //   tooltip: 'Start call',
@@ -320,12 +320,6 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
                     Expanded(
                       child: Container(
                         margin: const EdgeInsets.all(4),
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: const Color(0XFF2493FB),
-                          ),
-                        ),
                         child: false ==
                                 remoteRenderersLoading[remoteRenderer
                                     .key] // && true == remoteRenderer.value.srcObject?.active

@@ -111,8 +111,6 @@ class _RoomMapWidgetState extends State<RoomMapWidget> {
                             (index) {
                               var alert = alerts[
                                   index]; // Get the corresponding alert object
-                                  print("alert12345");
-                              print(alert);
                               String alertId = alert['roomId'].toString();
                               String alertType = alert['alertType'].toString();
                               String alertDescription = 'alert';
@@ -181,18 +179,17 @@ class _RoomMapWidgetState extends State<RoomMapWidget> {
             // ),
 
             //location on map
-            Positioned.fill(
+            const Positioned.fill(
               child: IgnorePointer(
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 50),
-                        child: Image.asset(
-                          width: 150,
-                          height: 150,
-                          "assets/images/logo.png",
+                        padding: EdgeInsets.only(bottom: 50),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.black,
                         ),
                       ),
                     ],
