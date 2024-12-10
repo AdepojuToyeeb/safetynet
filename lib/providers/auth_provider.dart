@@ -66,9 +66,27 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _checkLoginStatus() async {
-    final token = await _storage.read(key: 'auth_token');
-    if (token != null) {
-      state = state.copyWith(isLoggedIn: true);
+    try {
+      // Read the login timestamp
+      final loginTimestamp = await _storage.read(key: 'login_timestamp');
+
+      if (loginTimestamp != null) {
+        final loginTime = DateTime.parse(loginTimestamp);
+        final currentTime = DateTime.now();
+
+        // Check if login is still valid (within 6 hours)
+        if (currentTime.difference(loginTime).inHours < 6) {
+          state = state.copyWith(isLoggedIn: true);
+        } else {
+          // Token expired, reset login status
+          await _storage.deleteAll();
+          state = state.copyWith(isLoggedIn: false);
+        }
+      }
+    } catch (e) {
+      // If there's any error in reading or parsing, reset login status
+      await _storage.deleteAll();
+      state = state.copyWith(isLoggedIn: false);
     }
   }
 
@@ -88,6 +106,15 @@ class AuthNotifier extends StateNotifier<AuthState> {
   // );
   //   // After successful sign in, you might want to navigate to another screen
   // }
+
+  Future<void> logout() async {
+    // Clear storage and reset login state
+    await _storage.deleteAll();
+    state = state.copyWith(isLoggedIn: false, email: '', password: '');
+
+    // Optional: Add any additional logout logic like Firebase signOut
+    await _authService.signOut();
+  }
 
   Future<void> signIn(BuildContext context) async {
     if (state.email.isEmpty || state.password.isEmpty) {
@@ -116,6 +143,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
           state.email, state.password);
       state = state.copyWith(isLoading: false);
       if (!context.mounted) return;
+      final loginTimestamp = DateTime.now().toIso8601String();
+      await _storage.write(key: 'login_timestamp', value: loginTimestamp);
+
       await _storage.write(key: 'auth_token', value: 'your_generated_token');
       state = state.copyWith(isLoggedIn: true, isLoading: false);
       await Navigator.pushAndRemoveUntil(

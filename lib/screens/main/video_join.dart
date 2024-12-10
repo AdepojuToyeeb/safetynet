@@ -86,7 +86,7 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
     };
 
     initCamera();
-    join();
+    // join();
   }
 
   @override

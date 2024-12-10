@@ -56,8 +56,8 @@ class _PhoneNumberScreenState extends State<PhoneNumberScreen> {
       }, SetOptions(merge: true));
 
       // Navigate to next screen
-      Navigator.pushReplacement(
-        context,
+      Navigator.push(
+        context, 
         MaterialPageRoute(builder: (context) => const ConfirmPhoneNumber()),
       );
     } catch (e) {
