@@ -31,10 +31,6 @@ class AuthService {
     return _auth.currentUser;
   }
 
-  bool isLoggedIn() {
-    return _auth.currentUser != null;
-  }
-
   // Error Handler
   String _handleAuthException(dynamic e) {
     if (e is FirebaseAuthException) {
@@ -60,6 +56,10 @@ class AuthService {
 class AuthNotifier extends StateNotifier<AuthState> {
   final AuthService _authService;
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
+
+  bool isLoggedIn() {
+    return state.isLoggedIn;
+  }
 
   AuthNotifier(this._authService) : super(AuthState()) {
     _checkLoginStatus();

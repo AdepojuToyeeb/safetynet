@@ -26,7 +26,7 @@ class Signaling2 {
   final Map<String, RTCPeerConnection> _peerConnections = {};
   final _peerBanned = HashSet<String>();
 
-  static const collectionVideoCall = 'videoCall';
+  static const collectionVideoCall = 'room';
   static const tableConnectionParamsFor = 'connectionParamsFor';
   static const tablePeers = 'peers';
   static const tableSdp = 'sdp';
@@ -42,8 +42,10 @@ class Signaling2 {
   final _iceServers = {
     'iceServers': [
       {
-        // coturn server
-        'urls': ['turn:80.211.89.209:3478'],
+        'urls': [
+          'stun:stun1.l.google.com:19302',
+          'stun:stun2.l.google.com:19302'
+        ],
         'username': 'coturn',
         'credential': 'coturn',
       },
@@ -189,7 +191,6 @@ class Signaling2 {
 
     _startListenSdp();
   }
-
 
   void _startListenIce() {
     // WebRTC ICE
@@ -492,34 +493,32 @@ class Signaling2 {
 
     onAddLocalStream?.call('', localDisplayName, _localStream!);
   }
- 
-Future<void> stopUserMedia() async {
-  if (_localStream != null) {
-    // Disable camera
-    final videoTracks = _localStream!.getVideoTracks();
-    for (final track in videoTracks) {
-      track.enabled = false; // Turn off camera
-      await track.stop(); // Stop the camera track
-    }
 
-    // Disable microphone
-    final audioTracks = _localStream!.getAudioTracks();
-    for (final track in audioTracks) {
-      track.enabled = false; // Mute microphone
-      await track.stop(); // Stop the audio track
-    }
+  Future<void> stopUserMedia() async {
+    if (_localStream != null) {
+      // Disable camera
+      final videoTracks = _localStream!.getVideoTracks();
+      for (final track in videoTracks) {
+        track.enabled = false; // Turn off camera
+        await track.stop(); // Stop the camera track
+      }
 
-    // Dispose of the stream
-    await _localStream?.dispose();
-    _localStream = null;
+      // Disable microphone
+      final audioTracks = _localStream!.getAudioTracks();
+      for (final track in audioTracks) {
+        track.enabled = false; // Mute microphone
+        await track.stop(); // Stop the audio track
+      }
+
+      // Dispose of the stream
+      await _localStream?.dispose();
+      _localStream = null;
+    }
   }
-}
-Future<void> deleteRoom(String roomId) async {
+
+  Future<void> deleteRoom(String roomId) async {
     try {
-      await FirebaseFirestore.instance
-          .collection("rooms")
-          .doc(roomId)
-          .delete();
+      await FirebaseFirestore.instance.collection("rooms").doc(roomId).delete();
     } catch (e) {
       onGenericError?.call('Error deleting room: $e');
     }

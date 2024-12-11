@@ -44,7 +44,6 @@ dependencies:
   flutter_timer_countdown: ^1.0.7
   flutter_contacts: ^1.1.9+2
   permission_handler: ^11.3.1
-  contacts_service: ^0.6.3
   provider: ^6.1.2
   flutter_riverpod: ^2.5.1
   transparent_image: ^2.0.1

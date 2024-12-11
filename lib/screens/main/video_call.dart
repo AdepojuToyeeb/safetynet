@@ -95,7 +95,7 @@ class VideoCallRoomState extends State<VideoCallRoom> {
   @override
   void dispose() {
     localRenderer.dispose();
-    _updateRoomStatus(false);
+    // _updateRoomStatus(false);
     disposeRemoteRenderers();
     signaling.stopUserMedia();
     super.dispose();
@@ -120,41 +120,41 @@ class VideoCallRoomState extends State<VideoCallRoom> {
       setState(() => _currentPosition = position);
 
       // Save room data to Firebase
-      await _saveRoomToFirebase();
+      // await _saveRoomToFirebase();
     } catch (e) {
       SnackMsg.showError(context, 'Error getting location: $e');
     }
   }
 
-  Future<void> _saveRoomToFirebase() async {
-    if (_currentPosition != null) {
-      try {
-        await _firestore.collection('rooms').doc(roomId).set({
-          'roomId': roomId,
-          'createdAt': FieldValue.serverTimestamp(),
-          'location': GeoPoint(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-          ),
-          'userId': signaling.localDisplayName,
-          'active': true,
-        });
-      } catch (e) {
-        SnackMsg.showError(context, 'Error saving room data: $e');
-      }
-    }
-  }
+  // Future<void> _saveRoomToFirebase() async {
+  //   if (_currentPosition != null) {
+  //     try {
+  //       await _firestore.collection('rooms').doc(roomId).set({
+  //         'roomId': roomId,
+  //         'createdAt': FieldValue.serverTimestamp(),
+  //         'location': GeoPoint(
+  //           _currentPosition!.latitude,
+  //           _currentPosition!.longitude,
+  //         ),
+  //         'userId': signaling.localDisplayName,
+  //         'active': true,
+  //       });
+  //     } catch (e) {
+  //       SnackMsg.showError(context, 'Error saving room data: $e');
+  //     }
+  //   }
+  // }
 
-  Future<void> _updateRoomStatus(bool active) async {
-    try {
-      await _firestore.collection('rooms').doc(roomId).update({
-        'active': active,
-        'lastUpdated': FieldValue.serverTimestamp(),
-      });
-    } catch (e) {
-      SnackMsg.showError(context, 'Error updating room status: $e');
-    }
-  }
+  // Future<void> _updateRoomStatus(bool active) async {
+  //   try {
+  //     await _firestore.collection('rooms').doc(roomId).update({
+  //       'active': active,
+  //       'lastUpdated': FieldValue.serverTimestamp(),
+  //     });
+  //   } catch (e) {
+  //     SnackMsg.showError(context, 'Error updating room status: $e');
+  //   }
+  // }
 
   Future<void> initCamera() async {
     await localRenderer.initialize();

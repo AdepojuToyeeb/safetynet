@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:safetynet/screens/main/video_call.dart';
-import 'package:safetynet/screens/main/video_join.dart';
 import 'package:safetynet/utils/signaling.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:safetynet/widget/map.dart';
@@ -49,7 +48,7 @@ class MainScreenState extends State<MainScreen> {
             .doc(currentUser.uid)
             .get();
         setState(() {
-          userName = userDoc['fullName'] ?? 'User';
+          userName = userDoc['fullName'] ?? userDoc['email'] ?? 'User';
           userLocation = '';
         });
       }
@@ -77,7 +76,6 @@ class MainScreenState extends State<MainScreen> {
           fit: StackFit.expand,
           children: [
             //  _buildRoomList(),
-
             SafeArea(
               child: Container(
                 color: Colors.black,
@@ -129,36 +127,21 @@ class MainScreenState extends State<MainScreen> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            IconButton(icon: const Icon(Icons.home), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
-            const SizedBox(width: 32), // Space for FAB
-            IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
-            IconButton(icon: const Icon(Icons.person), onPressed: () {}),
-            // ElevatedButton(
-            //   onPressed: () {
-            //     Navigator.push(
-            //       context,
-            //       MaterialPageRoute(
-            //         builder: (context) => const VideoJoinRoom(
-            //           roomId: "ajhuR5qqwDR5wECszGnc",
-            //         ),
-            //       ),
-            //     );
-            //   },
-            //   child: const Icon(Icons.person),
-            // ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          roomId = await signaling.createRoom(_remoteRenderer);
-          textEditingController.text = roomId!;
-          setState(() {});
+      // bottomNavigationBar: BottomAppBar(
+      //   child: Row(
+      //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+      //     children: [
+      //       IconButton(icon: const Icon(Icons.home), onPressed: () {}),
+      //       IconButton(icon: const Icon(Icons.menu), onPressed: () {}),
+      //       const SizedBox(width: 32), // Space for FAB
+      //       IconButton(icon: const Icon(Icons.refresh), onPressed: () {}),
+      //       IconButton(icon: const Icon(Icons.person), onPressed: () {}),
+
+      //     ],
+      //   ),
+      // ),
+      floatingActionButton: GestureDetector(
+         onLongPress: () async {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -166,9 +149,27 @@ class MainScreenState extends State<MainScreen> {
             ),
           );
         },
-        child: const Icon(Icons.add),
+        child: FloatingActionButton(
+          
+          onPressed: () async {
+            // // roomId = await signaling.createRoom(_remoteRenderer);
+            // // textEditingController.text = roomId!;
+            // // setState(() {});
+            // Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (context) => const VideoCallRoom(),
+            //   ),
+            // );
+          },
+          backgroundColor: Colors.red,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.emergency_recording,
+            color: Colors.white,
+          ),
+        ),
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

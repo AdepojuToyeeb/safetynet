@@ -54,15 +54,17 @@ class MyApp extends ConsumerWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authService = ref.read(authServiceProvider);
-
+    final authService = ref.read(authProvider.notifier);
+    print("AuthServicess, ${authService.isLoggedIn()}");
     return MaterialApp(
       builder: FToastBuilder(),
       debugShowCheckedModeBanner: false,
       title: 'Safety Net',
       theme: theme,
       //  home: const SafetyNetSplashScreen(),
-      home: authService.isLoggedIn() ? const MainScreen() : const SafetyNetSplashScreen(),
+      home: authService.isLoggedIn()
+          ? const MainScreen()
+          : const SafetyNetSplashScreen(),
     );
   }
 }
