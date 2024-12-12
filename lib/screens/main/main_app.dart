@@ -141,7 +141,7 @@ class MainScreenState extends State<MainScreen> {
       //   ),
       // ),
       floatingActionButton: GestureDetector(
-         onLongPress: () async {
+        onLongPress: () async {
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -150,7 +150,6 @@ class MainScreenState extends State<MainScreen> {
           );
         },
         child: FloatingActionButton(
-          
           onPressed: () async {
             // // roomId = await signaling.createRoom(_remoteRenderer);
             // // textEditingController.text = roomId!;
@@ -161,14 +160,22 @@ class MainScreenState extends State<MainScreen> {
             //     builder: (context) => const VideoCallRoom(),
             //   ),
             // );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Long press to start recording'),
+                duration: Duration(seconds: 2),
+              ),
+            );
           },
           backgroundColor: Colors.red,
           shape: const CircleBorder(),
-          child: const Icon(Icons.emergency_recording,
+          child: const Icon(
+            Icons.emergency_recording,
             color: Colors.white,
           ),
         ),
       ),
+
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }

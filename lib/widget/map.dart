@@ -13,7 +13,7 @@ class RoomMapWidget extends StatefulWidget {
 
 class _RoomMapWidgetState extends State<RoomMapWidget> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  late MapController _mapController = MapController();
+  late final MapController _mapController = MapController();
   double latitude = 0;
   double longitude = 0;
   double topMargin = 500;
@@ -39,7 +39,7 @@ class _RoomMapWidgetState extends State<RoomMapWidget> {
   Widget build(BuildContext context) {
     return StreamBuilder<QuerySnapshot>(
       stream: _firestore
-          .collection('rooms')
+          .collection('room')
           .where('active', isEqualTo: true)
           .snapshots(),
       builder: (context, snapshot) {

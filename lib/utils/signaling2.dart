@@ -154,7 +154,6 @@ class Signaling2 {
     _peerBanned.clear();
 
     await _clearAllFirebaseData();
-
     _appointmentId = null;
   }
 
@@ -518,7 +517,7 @@ class Signaling2 {
 
   Future<void> deleteRoom(String roomId) async {
     try {
-      await FirebaseFirestore.instance.collection("rooms").doc(roomId).delete();
+      await FirebaseFirestore.instance.collection("room").doc(roomId).delete();
     } catch (e) {
       onGenericError?.call('Error deleting room: $e');
     }

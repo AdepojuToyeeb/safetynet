@@ -86,7 +86,7 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
     };
 
     initCamera();
-    // join();
+    join();
   }
 
   @override
@@ -147,7 +147,10 @@ class VideoCallRoomState extends State<VideoJoinRoom> {
   Future<void> hangUp(bool exit) async {
     try {
       // Close signaling and exit the room
-      await doTry(runAsync: () => signaling.hangUp(exit));
+      await doTry(
+          runAsync: () => signaling.hangUp(
+                exit,
+              ));
 
       setState(() {
         error = false;

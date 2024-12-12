@@ -87,9 +87,7 @@ class VideoCallRoomState extends State<VideoCallRoom> {
       SnackMsg.showError(context, errorText);
       error = true;
     };
-
     initCamera();
-    join();
   }
 
   @override
@@ -120,30 +118,31 @@ class VideoCallRoomState extends State<VideoCallRoom> {
       setState(() => _currentPosition = position);
 
       // Save room data to Firebase
-      // await _saveRoomToFirebase();
+      await _saveRoomToFirebase();
+      await join();
     } catch (e) {
       SnackMsg.showError(context, 'Error getting location: $e');
     }
   }
 
-  // Future<void> _saveRoomToFirebase() async {
-  //   if (_currentPosition != null) {
-  //     try {
-  //       await _firestore.collection('rooms').doc(roomId).set({
-  //         'roomId': roomId,
-  //         'createdAt': FieldValue.serverTimestamp(),
-  //         'location': GeoPoint(
-  //           _currentPosition!.latitude,
-  //           _currentPosition!.longitude,
-  //         ),
-  //         'userId': signaling.localDisplayName,
-  //         'active': true,
-  //       });
-  //     } catch (e) {
-  //       SnackMsg.showError(context, 'Error saving room data: $e');
-  //     }
-  //   }
-  // }
+  Future<void> _saveRoomToFirebase() async {
+    if (_currentPosition != null) {
+      try {
+        await _firestore.collection('room').doc(roomId).set({
+          'roomId': roomId,
+          'createdAt': FieldValue.serverTimestamp(),
+          'location': GeoPoint(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+          ),
+          'userId': signaling.localDisplayName,
+          'active': true,
+        });
+      } catch (e) {
+        SnackMsg.showError(context, 'Error saving room data: $e');
+      }
+    }
+  }
 
   // Future<void> _updateRoomStatus(bool active) async {
   //   try {
@@ -203,7 +202,6 @@ class VideoCallRoomState extends State<VideoCallRoom> {
   Future<void> hangUp(bool exit) async {
     try {
       await signaling.deleteRoom(roomId);
-
       // Close signaling and exit the room
       await signaling.hangUp(exit);
       setState(() {
