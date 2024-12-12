@@ -9,31 +9,29 @@ import 'package:safetynet/utils/helpers.dart';
 Marker buildMarker(BuildContext context, LatLng coordinates, String id,
     String type, String description) {
   if (description == 'alert') {
-    return 
-
-    Marker(
-  point: coordinates,
-  width: 150,
-  height: 250,
-  child: GestureDetector(
-    behavior: HitTestBehavior.opaque,  // Add this line
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => VideoJoinRoom(
-            roomId: id,
-          ),
+    return Marker(
+      point: coordinates,
+      width: 150,
+      height: 250,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque, // Add this line
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VideoJoinRoom(
+                roomId: id,
+              ),
+            ),
+          );
+        },
+        child: const Icon(
+          Icons.info,
+          color: Colors.red,
+          size: 36,
         ),
-      );
-    },
-    child:const Icon(
-      Icons.info,
-      color: Colors.red,
-      size: 36,
-    ),
-  ),
-);
+      ),
+    );
   } else {
     return Marker(
       point: coordinates,
@@ -53,8 +51,7 @@ Marker buildMarker(BuildContext context, LatLng coordinates, String id,
                     children: [
                       const SizedBox(height: 10),
                       Container(
-                        decoration:
-                            const BoxDecoration(color: Colors.orange),
+                        decoration: const BoxDecoration(color: Colors.orange),
                         child: const Padding(
                           padding: EdgeInsets.only(
                               left: 35, right: 35, top: 5, bottom: 5),

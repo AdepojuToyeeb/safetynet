@@ -1,9 +1,13 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:geolocator/geolocator.dart';
 
 typedef void StreamStateCallback(MediaStream stream);
+typedef ErrorCallback = void Function(String error);
 
 class Signaling {
   Map<String, dynamic> configuration = {
@@ -20,13 +24,18 @@ class Signaling {
   RTCPeerConnection? peerConnection;
   MediaStream? localStream;
   MediaStream? remoteStream;
+  MediaStream? _shareStream;
   String? roomId;
   String? currentRoomText;
   StreamStateCallback? onAddRemoteStream;
+  ErrorCallback? onGenericError;
 
-  Future<String> createRoom(RTCVideoRenderer remoteRenderer) async {
+  Future<String> createRoom(
+      RTCVideoRenderer remoteRenderer, Position? currentPosition) async {
+    print("currentPosition2 ,$currentPosition");
+
     FirebaseFirestore db = FirebaseFirestore.instance;
-    DocumentReference roomRef = db.collection('rooms').doc();
+    DocumentReference roomRef = db.collection('room').doc();
 
     print('Create PeerConnection with configuration: $configuration');
 
@@ -52,10 +61,28 @@ class Signaling {
     await peerConnection!.setLocalDescription(offer);
     print('Created offer: $offer');
 
-    Map<String, dynamic> roomWithOffer = {'offer': offer.toMap()};
-
-    await roomRef.set(roomWithOffer);
     var roomId = roomRef.id;
+    Map<String, dynamic> roomData = {
+      'offer': offer.toMap(),
+      'createdAt': FieldValue.serverTimestamp(),
+      'location': currentPosition != null
+          ? GeoPoint(
+              currentPosition.latitude,
+              currentPosition.longitude,
+            )
+          : null,
+      'active': true,
+      "roomId": roomId
+    };
+    if (currentPosition != null) {
+      roomData['location'] = GeoPoint(
+        currentPosition.latitude,
+        currentPosition.longitude,
+      );
+    }
+
+    await roomRef.set(roomData);
+
     print('New room created with SDK offer. Room ID: $roomId');
     currentRoomText = 'Current room is $roomId - You are the caller!';
     // Created a Room
@@ -108,10 +135,53 @@ class Signaling {
     return roomId;
   }
 
+  bool isScreenSharing() {
+    return _shareStream != null;
+  }
+
+  Future<int> cameraCount() async {
+    if (isScreenSharing()) {
+      return 0;
+    } else {
+      try {
+        final cams = await Helper.cameras;
+
+        return kIsWeb ? min(cams.length, 1) : cams.length;
+      } catch (e) {
+        // camera not accessible, like for screen sharing or other problems
+        onGenericError?.call('Error: $e');
+        return 0;
+      }
+    }
+  }
+
+  Future<void> switchCamera() async {
+    if (!kIsWeb && localStream != null) {
+      await Helper.switchCamera(localStream!.getVideoTracks().first);
+    }
+  }
+
+  bool isMicMuted() {
+    return !isMicEnabled();
+  }
+
+  bool isMicEnabled() {
+    if (localStream != null) {
+      return localStream!.getAudioTracks().first.enabled;
+    }
+
+    return true;
+  }
+
+  void muteMic() {
+    if (localStream != null) {
+      localStream!.getAudioTracks()[0].enabled = !isMicEnabled();
+    }
+  }
+
   Future<void> joinRoom(String roomId, RTCVideoRenderer remoteVideo) async {
     FirebaseFirestore db = FirebaseFirestore.instance;
-    print(roomId);
-    DocumentReference roomRef = db.collection('rooms').doc('$roomId');
+    DocumentReference roomRef = db.collection('room').doc(roomId);
     var roomSnapshot = await roomRef.get();
     print('Got room ${roomSnapshot.exists}');
 
@@ -187,12 +257,21 @@ class Signaling {
     RTCVideoRenderer remoteVideo,
   ) async {
     var stream = await navigator.mediaDevices
-        .getUserMedia({'video': true, 'audio': false});
+        .getUserMedia({'video': true, 'audio': true});
 
     localVideo.srcObject = stream;
     localStream = stream;
 
     remoteVideo.srcObject = await createLocalMediaStream('key');
+  }
+
+
+  Future<void> deleteRoom(String roomId) async {
+    try {
+      await FirebaseFirestore.instance.collection("room").doc(roomId).delete();
+    } catch (e) {
+      onGenericError?.call('Error deleting room: $e');
+    }
   }
 
   Future<void> hangUp(RTCVideoRenderer localVideo) async {
@@ -208,7 +287,7 @@ class Signaling {
 
     if (roomId != null) {
       var db = FirebaseFirestore.instance;
-      var roomRef = db.collection('rooms').doc(roomId);
+      var roomRef = db.collection('room').doc(roomId);
       var calleeCandidates = await roomRef.collection('calleeCandidates').get();
       calleeCandidates.docs.forEach((document) => document.reference.delete());
 
@@ -244,5 +323,16 @@ class Signaling {
       onAddRemoteStream?.call(stream);
       remoteStream = stream;
     };
+     peerConnection?.onConnectionState = (RTCPeerConnectionState state) {
+      print('Connection state change: $state');
+      if (state == RTCPeerConnectionState.RTCPeerConnectionStateConnected) {
+        print('Peer connection established');
+      }
+    };
+
+    peerConnection?.onSignalingState = (RTCSignalingState state) {
+      print('Signaling state change: $state');
+    };
+
   }
 }

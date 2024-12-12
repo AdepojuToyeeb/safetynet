@@ -1,8 +1,7 @@
-import 'dart:math';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:safetynet/utils/signaling2.dart';
+import 'package:safetynet/utils/signaling.dart';
 import 'package:safetynet/utils/snack_message.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -17,85 +16,34 @@ class VideoCallRoom extends StatefulWidget {
 }
 
 class VideoCallRoomState extends State<VideoCallRoom> {
-  static const _chars =
-      'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
-  static final _rnd = Random();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-
-  static String getRandomString(int length) =>
-      String.fromCharCodes(Iterable.generate(
-          length, (index) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
-
-  final signaling = Signaling2(localDisplayName: getRandomString(20));
-
-  final localRenderer = RTCVideoRenderer();
-  final Map<String, RTCVideoRenderer> remoteRenderers = {};
-  final Map<String, bool?> remoteRenderersLoading = {};
-
-  late String roomId;
-  Position? _currentPosition;
-
-  bool localRenderOk = false;
-  bool error = false;
+  String? roomId;
+  Position? currentPosition;
+  bool _isUsingFrontCamera = true;
+  Signaling signaling = Signaling();
+  final RTCVideoRenderer _localRenderer = RTCVideoRenderer();
+  final RTCVideoRenderer _remoteRenderer = RTCVideoRenderer();
+  bool localRenderOk = true;
 
   @override
   void initState() {
-    super.initState();
-    roomId = signaling.localDisplayName;
     _getCurrentLocation();
-    signaling.onAddLocalStream = (peerUuid, displayName, stream) {
-      setState(() {
-        localRenderer.srcObject = stream;
-        localRenderOk = stream != null;
-      });
-    };
+    signaling.openUserMedia(_localRenderer, _remoteRenderer);
+    _localRenderer.initialize();
+    _remoteRenderer.initialize();
 
-    signaling.onAddRemoteStream = (peerUuid, displayName, stream) async {
-      final remoteRenderer = RTCVideoRenderer();
-      await remoteRenderer.initialize();
-      remoteRenderer.srcObject = stream;
+    signaling.onAddRemoteStream = ((stream) {
+      _remoteRenderer.srcObject = stream;
+      setState(() {});
+      localRenderOk = stream as bool;
+    });
 
-      setState(() => remoteRenderers[peerUuid] = remoteRenderer);
-    };
-
-    signaling.onRemoveRemoteStream = (peerUuid, displayName) {
-      if (remoteRenderers.containsKey(peerUuid)) {
-        remoteRenderers[peerUuid]!.srcObject = null;
-        remoteRenderers[peerUuid]!.dispose();
-
-        setState(() {
-          remoteRenderers.remove(peerUuid);
-          remoteRenderersLoading.remove(peerUuid);
-        });
-      }
-    };
-
-    signaling.onConnectionConnected = (peerUuid, displayName) {
-      setState(() => remoteRenderersLoading[peerUuid] = false);
-    };
-
-    signaling.onConnectionLoading = (peerUuid, displayName) {
-      setState(() => remoteRenderersLoading[peerUuid] = true);
-    };
-
-    signaling.onConnectionError = (peerUuid, displayName) {
-      SnackMsg.showError(context, 'Connection failed with $displayName');
-      error = true;
-    };
-
-    signaling.onGenericError = (errorText) {
-      SnackMsg.showError(context, errorText);
-      error = true;
-    };
-    initCamera();
+    super.initState();
   }
 
   @override
   void dispose() {
-    localRenderer.dispose();
-    // _updateRoomStatus(false);
-    disposeRemoteRenderers();
-    signaling.stopUserMedia();
+    _localRenderer.dispose();
+    _remoteRenderer.dispose();
     super.dispose();
   }
 
@@ -115,63 +63,16 @@ class VideoCallRoomState extends State<VideoCallRoom> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-      setState(() => _currentPosition = position);
-
-      // Save room data to Firebase
-      await _saveRoomToFirebase();
-      await join();
+      setState(() {
+        currentPosition = position;
+      });
+      roomId = await signaling.createRoom(_localRenderer, currentPosition);
+      setState(() {
+        roomId = roomId;
+      });
     } catch (e) {
       SnackMsg.showError(context, 'Error getting location: $e');
     }
-  }
-
-  Future<void> _saveRoomToFirebase() async {
-    if (_currentPosition != null) {
-      try {
-        await _firestore.collection('room').doc(roomId).set({
-          'roomId': roomId,
-          'createdAt': FieldValue.serverTimestamp(),
-          'location': GeoPoint(
-            _currentPosition!.latitude,
-            _currentPosition!.longitude,
-          ),
-          'userId': signaling.localDisplayName,
-          'active': true,
-        });
-      } catch (e) {
-        SnackMsg.showError(context, 'Error saving room data: $e');
-      }
-    }
-  }
-
-  // Future<void> _updateRoomStatus(bool active) async {
-  //   try {
-  //     await _firestore.collection('rooms').doc(roomId).update({
-  //       'active': active,
-  //       'lastUpdated': FieldValue.serverTimestamp(),
-  //     });
-  //   } catch (e) {
-  //     SnackMsg.showError(context, 'Error updating room status: $e');
-  //   }
-  // }
-
-  Future<void> initCamera() async {
-    await localRenderer.initialize();
-    await doTry(runAsync: () => signaling.openUserMedia());
-  }
-
-  void disposeRemoteRenderers() {
-    for (final remoteRenderer in remoteRenderers.values) {
-      remoteRenderer.dispose();
-    }
-
-    remoteRenderers.clear();
-  }
-
-  Flex view({required List<Widget> children}) {
-    final isLandscape =
-        MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
-    return isLandscape ? Row(children: children) : Column(children: children);
   }
 
   Future<void> doTry(
@@ -187,28 +88,25 @@ class VideoCallRoomState extends State<VideoCallRoom> {
     }
   }
 
-  Future<void> reJoin() async {
-    await hangUp(false);
-    await join();
+  Future<void> initCamera() async {
+    await _localRenderer.initialize();
+    await _remoteRenderer.initialize();
+    await doTry(
+        runAsync: () =>
+            signaling.openUserMedia(_localRenderer, _remoteRenderer));
   }
 
-  Future<void> join() async {
-    setState(() => error = false);
-
-    await signaling.reOpenUserMedia();
-    await signaling.join(roomId);
+  Flex view({required List<Widget> children}) {
+    final isLandscape =
+        MediaQuery.of(context).size.width > MediaQuery.of(context).size.height;
+    return isLandscape ? Row(children: children) : Column(children: children);
   }
 
-  Future<void> hangUp(bool exit) async {
+  Future<void> hangUp() async {
     try {
-      await signaling.deleteRoom(roomId);
+      await signaling.deleteRoom(roomId!);
       // Close signaling and exit the room
-      await signaling.hangUp(exit);
-      setState(() {
-        error = false;
-        roomId = '';
-        disposeRemoteRenderers();
-      });
+      await signaling.hangUp(_localRenderer);
       // Pop the navigation if we're exiting
       Navigator.of(context).pop();
     } catch (e) {
@@ -216,12 +114,24 @@ class VideoCallRoomState extends State<VideoCallRoom> {
     }
   }
 
-  bool isMicMuted() {
+  Future<void> switchCamera() async {
     try {
-      return signaling.isMicMuted();
+      // Assuming you're using flutter_webrtc or similar package
+      final videoTrack = _localRenderer.srcObject?.getVideoTracks().first;
+      // signaling.switchCamera();
+
+      if (videoTrack != null) {
+        if (!kIsWeb && _localRenderer != null) {
+          await Helper.switchCamera(
+              _localRenderer.srcObject!.getVideoTracks().first);
+          setState(() {
+            _isUsingFrontCamera = !_isUsingFrontCamera;
+          });
+        }
+        // Toggle the camera flag
+      }
     } catch (e) {
-      SnackMsg.showError(context, 'Error: $e');
-      return true;
+      print('Error switching camera: $e');
     }
   }
 
@@ -229,8 +139,8 @@ class VideoCallRoomState extends State<VideoCallRoom> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'Live Broadcast - ${signaling.localDisplayName}',
+        title: const Text(
+          'Live Broadcast ',
           style: const TextStyle(fontSize: 16),
         ),
         automaticallyImplyLeading: false,
@@ -239,131 +149,66 @@ class VideoCallRoomState extends State<VideoCallRoom> {
       floatingActionButton: FutureBuilder<int>(
         future: signaling.cameraCount(),
         initialData: 0,
-        builder: (context, cameraCountSnap) => Wrap(
-          spacing: 15,
-          children: [
-            if (!localRenderOk) ...[
-              FloatingActionButton(
-                tooltip: 'Open camera',
-                backgroundColor: Colors.redAccent,
-                child: const Icon(Icons.videocam_off_outlined),
-                onPressed: () async => await doTry(
-                  runAsync: () => signaling.reOpenUserMedia(),
-                ),
-              ),
-            ],
-            if (roomId.length > 2) ...[
-              // if (error) ...[
-              //   FloatingActionButton(
-              //     tooltip: 'Retry call',
-              //     backgroundColor: Colors.green,
-              //     onPressed: () async => await doTry(
-              //       runAsync: () => join(),
-              //       onError: () => hangUp(false),
-              //     ),
-              //     child: const Icon(Icons.add_call),
-              //   ),
-              // ],
-              if (localRenderOk && signaling.isJoined()) ...[
-                if (cameraCountSnap.hasData &&
-                    cameraCountSnap.requireData > 1) ...[
+        builder: (context, cameraCountSnap) {
+          if (cameraCountSnap.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          }
+
+          if (!cameraCountSnap.hasData) {
+            return const Text('No data available');
+          }
+          final cameraCount = cameraCountSnap.data;
+
+          return Wrap(
+            spacing: 15,
+            children: [
+              if (localRenderOk) ...[
+                if (cameraCount != null && cameraCount > 1) ...[
                   FloatingActionButton(
                     tooltip: 'Switch camera',
                     backgroundColor: Colors.grey,
                     child: const Icon(Icons.switch_camera),
                     onPressed: () async => await doTry(
-                      runAsync: () => signaling.switchCamera(),
+                      runAsync: () => switchCamera(),
                     ),
                   )
                 ],
                 FloatingActionButton(
-                  tooltip: isMicMuted() ? 'Un-mute mic' : 'Mute mic',
-                  backgroundColor:
-                      isMicMuted() ? Colors.redAccent : Colors.grey,
-                  child: isMicMuted()
-                      ? const Icon(Icons.mic_off)
-                      : const Icon(Icons.mic_outlined),
-                  onPressed: () => doTry(
-                    runSync: () => setState(() => signaling.muteMic()),
-                  ),
-                ),
-                FloatingActionButton(
                   tooltip: 'Hangup',
                   backgroundColor: Colors.red,
                   child: const Icon(Icons.call_end),
-                  onPressed: () => hangUp(false),
-                ),
-              ] else ...[
-                FloatingActionButton(
-                  tooltip: 'Start call',
-                  backgroundColor: Colors.green,
-                  onPressed: () async => await doTry(
-                    runAsync: () => join(),
-                    onError: () => hangUp(false),
-                  ),
-                  child: const Icon(Icons.call),
+                  onPressed: () => hangUp(),
                 ),
               ],
             ],
-          ],
-        ),
+          );
+        },
       ),
       body: Container(
         margin: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            // room
-            // Container(
-            //   margin: const EdgeInsets.all(8.0),
-            //   child: Row(
-            //     mainAxisAlignment: MainAxisAlignment.center,
-            //     children: [
-            //       const Text("Room ID: "),
-            //       Flexible(
-            //         child: TextFormField(
-            //           initialValue: roomId,
-            //           onChanged: (value) => setState(() => roomId = value),
-            //         ),
-            //       )
-            //     ],
-            //   ),
-            // ),
-
             // streaming
             Expanded(
               child: view(
                 children: [
                   if (localRenderOk) ...[
                     Expanded(
-                      child: Container(
-                        margin: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-                        // padding: const EdgeInsets.all(4),
-
-                        child: RTCVideoView(localRenderer,
-                            mirror: !signaling.isScreenSharing()),
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: RTCVideoView(_localRenderer,
+                                  mirror: _isUsingFrontCamera),
+                            ),
+                          
+                          ],
+                        ),
                       ),
                     ),
                   ],
-                  // for (final remoteRenderer in remoteRenderers.entries) ...[
-                  //   Expanded(
-                  //     child: Container(
-                  //       margin: const EdgeInsets.all(4),
-                  //       padding: const EdgeInsets.all(4),
-                  //       decoration: BoxDecoration(
-                  //         border: Border.all(
-                  //           color: const Color(0XFF2493FB),
-                  //         ),
-                  //       ),
-                  //       child: false ==
-                  //               remoteRenderersLoading[remoteRenderer
-                  //                   .key] // && true == remoteRenderer.value.srcObject?.active
-                  //           ? RTCVideoView(remoteRenderer.value)
-                  //           : const Center(
-                  //               child: CircularProgressIndicator(),
-                  //             ),
-                  //     ),
-                  //   ),
-                  // ],
                 ],
               ),
             ),

@@ -1,1 +1,25 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"safetynet-78a92","appId":"1:758501778551:android:a3960f01244f2a55e05272","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"safetynet-78a92","configurations":{"android":"1:758501778551:android:a3960f01244f2a55e05272","ios":"1:758501778551:ios:dffddf71dbe58ee1e05272","macos":"1:758501778551:ios:dffddf71dbe58ee1e05272","web":"1:758501778551:web:b3dfbb0f9e2de1bde05272","windows":"1:758501778551:web:afc5c4a5c0c67b4ae05272"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "safetynet-78a92",
+          "appId": "1:758501778551:android:a3960f01244f2a55e05272",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "safetynet-78a92",
+          "configurations": {
+            "android": "1:758501778551:android:a3960f01244f2a55e05272",
+            "ios": "1:758501778551:ios:dffddf71dbe58ee1e05272",
+            "macos": "1:758501778551:ios:dffddf71dbe58ee1e05272",
+            "web": "1:758501778551:web:b3dfbb0f9e2de1bde05272",
+            "windows": "1:758501778551:web:afc5c4a5c0c67b4ae05272"
+          }
+        }
+      }
+    }
+  }
+}
