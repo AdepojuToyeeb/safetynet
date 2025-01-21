@@ -148,6 +148,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
       await _storage.write(key: 'auth_token', value: 'your_generated_token');
       state = state.copyWith(isLoggedIn: true, isLoading: false);
+      
       await Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const MainScreen()),

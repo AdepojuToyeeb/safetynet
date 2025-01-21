@@ -63,7 +63,8 @@ class _RoomMapWidgetState extends State<RoomMapWidget> {
 
           // Check if location data exists
           if (data.containsKey('location')) {
-            LatLng alertLocation = LatLng(geoPoint.latitude, geoPoint.longitude);
+            LatLng alertLocation =
+                LatLng(geoPoint.latitude, geoPoint.longitude);
 
             alertLatLngList.add(alertLocation);
 
@@ -245,7 +246,7 @@ class _RoomMapWidgetState extends State<RoomMapWidget> {
                   _mapController.move(
                       LatLng(mapCentre.latitude, mapCentre.longitude),
                       _mapController.camera.zoom);
-                                  // setNameCurrentPos();
+                  // setNameCurrentPos();
                 },
                 child: const Icon(
                   Icons.person_pin_circle_outlined,

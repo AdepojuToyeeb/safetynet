@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:safetynet/screens/main/video_call.dart';
+import 'package:safetynet/screens/main/video_call_agora.dart';
 import 'package:safetynet/utils/signaling.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:safetynet/widget/map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -26,16 +28,75 @@ class MainScreenState extends State<MainScreen> {
 
   @override
   void initState() {
-    _localRenderer.initialize();
-    _remoteRenderer.initialize();
-
-    signaling.onAddRemoteStream = ((stream) {
-      _remoteRenderer.srcObject = stream;
-      setState(() {});
-    });
-
     super.initState();
     _fetchUserDetails();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    try {
+      // Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            userLocation = 'Location permissions denied';
+          });
+          return;
+        }
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      // Get address from coordinates
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        Placemark place = placemarks[0];
+        String address = '';
+
+        // Build address string with available components
+        if (place.street?.isNotEmpty == true) {
+          address += place.street!;
+        }
+        if (place.subLocality?.isNotEmpty == true) {
+          address +=
+              address.isEmpty ? place.subLocality! : ', ${place.subLocality}';
+        }
+        if (place.locality?.isNotEmpty == true) {
+          address += address.isEmpty ? place.locality! : ', ${place.locality}';
+        }
+
+        // Update Firebase with user's location
+        User? currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .update({
+            'location': GeoPoint(position.latitude, position.longitude),
+            'address': address,
+            'lastLocationUpdate': FieldValue.serverTimestamp(),
+          });
+        }
+
+        setState(() {
+          userLocation = address;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        userLocation = 'Error fetching location';
+      });
+      print('Error getting location: $e');
+    }
   }
 
   Future<void> _fetchUserDetails() async {
@@ -98,15 +159,15 @@ class MainScreenState extends State<MainScreen> {
                           const SizedBox(
                             height: 4,
                           ),
-                          const Row(
+                          Row(
                             children: [
-                              Icon(Icons.location_on,
+                              const Icon(Icons.location_on,
                                   size: 16, color: Colors.grey),
-                              SizedBox(width: 4),
+                              const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
-                                  'Wuse, Adetokunbo Ademola Cres...',
-                                  style: TextStyle(
+                                  userLocation,
+                                  style: const TextStyle(
                                       fontSize: 14, color: Colors.grey),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -144,9 +205,7 @@ class MainScreenState extends State<MainScreen> {
         onLongPress: () async {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const VideoCallRoom(),
-            ),
+            MaterialPageRoute(builder: (context) => const AgoraCall()),
           );
         },
         child: FloatingActionButton(

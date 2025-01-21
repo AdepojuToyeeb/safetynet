@@ -3,7 +3,7 @@
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:safetynet/screens/main/video_join.dart';
+import 'package:safetynet/screens/main/video_join_agora.dart';
 import 'package:safetynet/utils/helpers.dart';
 
 Marker buildMarker(BuildContext context, LatLng coordinates, String id,
@@ -21,8 +21,8 @@ Marker buildMarker(BuildContext context, LatLng coordinates, String id,
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => VideoJoinRoom(
-            roomId: id,
+          builder: (context) => JoinAgoraRoomWidget(
+            userId: id,
           ),
         ),
       );
